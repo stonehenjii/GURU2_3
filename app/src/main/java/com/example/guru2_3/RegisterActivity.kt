@@ -1,5 +1,6 @@
 package com.example.guru2_3
 
+import DatabaseHelper
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -30,6 +31,8 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var regConfirmPwText: TextView
     private lateinit var regNicknameText: TextView
     private lateinit var regLoginText: TextView
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +69,9 @@ class RegisterActivity : AppCompatActivity() {
         regLoginText = findViewById(R.id.regLoginText)
     }
 
+
     private fun performRegister() {
+
         val id = regIDEditText.text.toString().trim()
         val password = regPwEditText.text.toString().trim()
         val confirmPassword = regConfirmPwEditText.text.toString().trim()
@@ -103,13 +108,62 @@ class RegisterActivity : AppCompatActivity() {
         Toast.makeText(this, "로그인 페이지로 이동합니다!", Toast.LENGTH_LONG).show()
 
 
+        val dbHelper = DatabaseHelper(this)
+        val success = dbHelper.addUser(id, password, nickname)
+        if (success != -1L) {
+            Toast.makeText(this, "회원가입 성공!", Toast.LENGTH_SHORT).show()
+            movetoLoginPage()
+        } else {
+            Toast.makeText(this, "이미 존재하는 아이디입니다.", Toast.LENGTH_SHORT).show()
+        }
+
+
     }
 
     private fun setClickListeners() {
         // 로그인 클릭 (아이콘 + 텍스트)
         regLoginicon.setOnClickListener { movetoLoginPage() }
         regLoginText.setOnClickListener { movetoLoginPage() }
+
     }
+
+    private fun validateAndMoveToLogin() {
+        val id = regIDEditText.text.toString().trim()
+        val password = regPwEditText.text.toString().trim()
+        val confirmPassword = regConfirmPwEditText.text.toString().trim()
+        val nickname = regNicknameEditText.text.toString().trim()
+
+        // 입력값 검증 - performRegister()와 동일한 검증 로직
+        if (id.isEmpty()) {
+            Toast.makeText(this, "아이디를 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (password.isEmpty()) {
+            Toast.makeText(this, "비밀번호를 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (confirmPassword.isEmpty()) {
+            Toast.makeText(this, "비밀번호 확인을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (nickname.isEmpty()) {
+            Toast.makeText(this, "닉네임을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 비밀번호 확인
+        if (password != confirmPassword) {
+            Toast.makeText(this, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 🔥 모든 검증 통과 시에만 로그인 페이지로 이동
+        movetoLoginPage()
+    }
+
     private fun movetoLoginPage() {
         // 로그인 화면으로 이동
         val intent = Intent(this, LoginActivity::class.java)

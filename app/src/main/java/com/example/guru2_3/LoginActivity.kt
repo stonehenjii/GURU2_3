@@ -1,5 +1,5 @@
 package com.example.guru2_3
-
+import DatabaseHelper
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -9,10 +9,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-//import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-//import kotlinx.serialization.json.Json
-//import okhttp3.MediaType.Companion.toMediaType
-//import retrofit2.Retrofit
+import kotlinx.serialization.json.Json
+import retrofit2.Retrofit
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import okhttp3.MediaType.Companion.toMediaType
+
+
+
 
 
 class LoginActivity : AppCompatActivity() {
@@ -32,20 +35,6 @@ class LoginActivity : AppCompatActivity() {
 
     private val dbHelper = DatabaseHelper(this)
 
-//    val json = Json {
-//        ignoreUnknownKeys = true // 알 수 없는 JSON 키 무시
-//        coerceInputValues = true // null 값을 기본값으로 변환
-//    }
-
-//    val baseUrl = "" // 서버에서 내려주는 값을 저장해
-
-//    val retrofit = Retrofit.Builder()
-//        .baseUrl(baseUrl)
-//        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-//        .build()
-
-    //val loginApiService = retrofit.create(LoginApiService::class.java)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -62,17 +51,7 @@ class LoginActivity : AppCompatActivity() {
 
 
 
-        // 2. 새로운 메모 추가
-        dbHelper.addMemo("DB Helper 테스트 메모")
-        Log.d("DatabaseTest", "새로운 메모를 추가했습니다.")
 
-        // 3. 모든 메모를 불러와서 로그로 출력
-        val memoList = dbHelper.getAllMemos()
-        Log.d("DatabaseTest", "--- 전체 메모 목록 ---")
-        for (memo in memoList) {
-            Log.d("DatabaseTest", "ID: ${memo.id}, 내용: ${memo.content}")
-        }
-        // ------------------------------------
     }
 
     private fun initViews() {
@@ -109,17 +88,43 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
+        val dbHelper = DatabaseHelper(this)
 
-        //retrofit.
+        // 🔥 먼저 기존 사용자인지 확인
+        if (dbHelper.validateUser(username, password)) {
+            // 기존 사용자 - 로그인 성공
+            Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
+            movetotimer()
+        } else {
+            // 🔥 새로운 사용자 - 자동 회원가입
+            try {
+                // 닉네임을 아이디와 동일하게 설정 (또는 다른 로직 사용)
+                val nickname = username // 또는 "${username}_user" 등
 
-        //infoResponse.onSuccess {
-        //    if(infoResponse.id == username && infoResponse.password == password) moveToHome()
-        //}
+                val success = dbHelper.addUser(username, password, nickname)
+                if (success != -1L) {
+                    Toast.makeText(this, "자동 회원가입 완료! 로그인됩니다.", Toast.LENGTH_SHORT).show()
+                    movetotimer()
+                } else {
+                    Toast.makeText(this, "회원가입 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "로그인 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+        private fun performRegister() {
+            // 회원가입 화면으로 이동
+            Toast.makeText(this, "회원가입 함수 진입!", Toast.LENGTH_SHORT).show()
 
-    private fun performRegister() {
-        // 회원가입 화면으로 이동
-        val intent = Intent(this, RegisterActivity::class.java)
+            val intent = Intent(this, RegisterActivity::class.java)
+            startActivity(intent)
+        }
+        private fun movetotimer() {
+        // 타이머 화면으로 이동
+        val intent = Intent(this, TestActivity::class.java)
         startActivity(intent)
     }
-}
+    }
+
+

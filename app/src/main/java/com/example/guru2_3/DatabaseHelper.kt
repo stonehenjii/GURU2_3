@@ -2,7 +2,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.util.Log
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -38,7 +37,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val CREATE_USERS_TABLE = """
             CREATE TABLE $TABLE_USERS (
                 $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
+                user_id TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 nickname TEXT NOT NULL,
                 $KEY_CREATED_AT TEXT,
@@ -157,15 +156,24 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     // --- 데이터 조작 함수 (CRUD) ---
 
-    fun addUser(email: String, nickname: String): Long {
+    fun addUser(id: String, password: String, nickname: String): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
-            put("email", email)
-            put("password", "temp_password") // 임시 비밀번호
+            put("user_id", id)
+            put("password", password)
             put("nickname", nickname)
         }
-        return db.insert(TABLE_USERS, null, values)
+        return db.insert("users", null, values)
     }
+
+    fun validateUser(userid: String, password: String): Boolean {
+        val db = readableDatabase
+        val cursor = db.query("users", null, "user_id=? AND password=?", arrayOf(userid, password), null, null, null)
+        val isValid = cursor.moveToFirst()
+        cursor.close()
+        return isValid
+    }
+
 
     fun addTag(userId: Long, name: String): Long {
         val db = this.writableDatabase

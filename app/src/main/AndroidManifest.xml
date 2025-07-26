@@ -19,9 +19,9 @@
         <activity
             android:name=".TagActivity"
             android:exported="false" />
-        <activity
-            android:name=".TestActivity"
-            android:exported="false" />
+<!--        <activity-->
+<!--            android:name=".TestActivity"-->
+<!--            android:exported="false" />-->
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
