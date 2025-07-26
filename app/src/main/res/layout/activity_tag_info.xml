@@ -74,8 +74,10 @@
         android:id="@+id/imageView"
         android:layout_width="69dp"
         android:layout_height="61dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="35dp"
         android:src="@drawable/tomato3"
-        tools:layout_editor_absoluteX="5dp"
-        tools:layout_editor_absoluteY="35dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
