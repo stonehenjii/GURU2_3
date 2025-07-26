@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+             android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/TimerLogo"
+        android:layout_width="163dp"
+        android:layout_height="197dp"
+        android:layout_marginStart="124dp"
+        android:layout_marginTop="114dp"
+        android:layout_marginEnd="124dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/timer" />
+
+    <ImageView
+        android:id="@+id/registerIcon"
+        android:layout_width="88dp"
+        android:layout_height="89dp"
+        android:layout_marginStart="228dp"
+        android:layout_marginEnd="113dp"
+        android:layout_marginBottom="72dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.944"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/tomato1" />
+
+    <TextView
+        android:id="@+id/registerText"
+        android:layout_width="115dp"
+        android:layout_height="51dp"
+        android:layout_marginStart="216dp"
+        android:layout_marginTop="612dp"
+        android:text="회원가입"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/IDEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="47dp"
+        android:layout_marginTop="376dp"
+        android:layout_marginEnd="56dp"
+        android:ems="10"
+        android:hint="ID"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/IDIcon"
+        android:layout_width="101dp"
+        android:layout_height="81dp"
+        android:layout_marginTop="360dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintEnd_toStartOf="@+id/IDEditText"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/tomato3" />
+
+    <TextView
+        android:id="@+id/IDText"
+        android:layout_width="115dp"
+        android:layout_height="51dp"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="384dp"
+        android:text="아이디"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/pwIcon"
+        android:layout_width="99dp"
+        android:layout_height="83dp"
+        android:layout_marginTop="472dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="58dp"
+        app:layout_constraintBottom_toTopOf="@+id/loginIcon"
+        app:layout_constraintEnd_toStartOf="@+id/pwEditText"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
+        app:srcCompat="@drawable/tomato3" />
+
+    <TextView
+        android:id="@+id/pwText"
+        android:layout_width="115dp"
+        android:layout_height="51dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="460dp"
+        android:text="비밀번호"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/pwEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="464dp"
+        android:layout_marginEnd="56dp"
+        android:ems="10"
+        android:hint="Password"
+        android:inputType="textPassword"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/loginIcon"
+        android:layout_width="88dp"
+        android:layout_height="89dp"
+        android:layout_marginStart="100dp"
+        android:layout_marginBottom="72dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/tomato1" />
+
+    <TextView
+        android:id="@+id/loginText"
+        android:layout_width="115dp"
+        android:layout_height="51dp"
+        android:layout_marginStart="115dp"
+        android:layout_marginTop="612dp"
+        android:text="로그인"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

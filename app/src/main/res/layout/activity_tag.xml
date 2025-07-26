@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".TagActivity">
+
+    <ImageView
+        android:id="@+id/tagaddicon"
+        android:layout_width="58dp"
+        android:layout_height="59dp"
+        android:layout_marginTop="33dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/tomato3" />
+
+    <TextView
+        android:id="@+id/tagaddText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="16dp"
+        android:text="+"
+        android:textSize="48sp"
+        app:layout_constraintEnd_toEndOf="@+id/tagaddicon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/tagContainer"
+        android:layout_width="278dp"
+        android:layout_height="173dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="120dp"
+        android:layout_marginEnd="50dp"
+        android:background="#F44336"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <EditText
+            android:id="@+id/createTagNameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="태그 이름"
+            android:inputType="text"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/createTagFinishRate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="완수율"
+            android:textColor="#000000"
+            android:textSize="20sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/createTagDateSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal|left"
+            android:text="시험일정"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
