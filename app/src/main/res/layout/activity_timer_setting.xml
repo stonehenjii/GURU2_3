@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".TimerSetting">
+
+    <ImageButton
+        android:id="@+id/shortBreakBtn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="150dp"
+        android:backgroundTint="@color/white"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/longBreakBtn"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.098"
+        app:srcCompat="@drawable/redtomato" />
+
+    <ImageButton
+        android:id="@+id/longBreakBtn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="284dp"
+        android:layout_marginEnd="10dp"
+        android:backgroundTint="@color/white"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.098"
+        app:srcCompat="@drawable/redtomato" />
+
+    <ImageButton
+        android:id="@+id/studyTimeBtn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="16dp"
+        android:backgroundTint="@color/white"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/longBreakBtn"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.098"
+        app:srcCompat="@drawable/redtomato" />
+
+    <ImageButton
+        android:id="@+id/sessionBtn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="144dp"
+        android:backgroundTint="@color/white"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.454"
+        app:srcCompat="@drawable/redtomato" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="80dp"
+        android:layout_height="31dp"
+        android:layout_marginStart="37dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="50dp"
+        android:text="집중시간"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toStartOf="@+id/textView3"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/studyTimeBtn" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="80dp"
+        android:layout_height="31dp"
+        android:layout_marginTop="3dp"
+        android:text="세션 수"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.522"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sessionBtn" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="80dp"
+        android:layout_height="31dp"
+        android:layout_marginStart="47dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="50dp"
+        android:text="짧은 휴식"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toStartOf="@+id/textView4"
+        app:layout_constraintHorizontal_bias="0.914"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/shortBreakBtn" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="80dp"
+        android:layout_height="31dp"
+        android:layout_marginTop="7dp"
+        android:text="긴 휴식"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.924"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/longBreakBtn" />
+
+
+    <EditText
+        android:id="@+id/studyTimeEt"
+        android:layout_width="72dp"
+        android:layout_height="37dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:inputType="number"
+        android:maxLength="2"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/studyTimeBtn"
+        app:layout_constraintEnd_toEndOf="@+id/studyTimeBtn"
+        app:layout_constraintHorizontal_bias="0.565"
+        app:layout_constraintStart_toStartOf="@+id/studyTimeBtn"
+        app:layout_constraintTop_toTopOf="@+id/studyTimeBtn"
+        app:layout_constraintVertical_bias="0.616" />
+
+    <EditText
+        android:id="@+id/shortBreakEt"
+        android:layout_width="72dp"
+        android:layout_height="37dp"
+        android:gravity="center"
+        android:inputType="number"
+        android:maxLength="2"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/shortBreakBtn"
+        app:layout_constraintEnd_toEndOf="@+id/shortBreakBtn"
+        app:layout_constraintHorizontal_bias="0.478"
+        app:layout_constraintStart_toStartOf="@+id/shortBreakBtn"
+        app:layout_constraintTop_toTopOf="@+id/shortBreakBtn"
+        app:layout_constraintVertical_bias="0.662" />
+
+    <EditText
+        android:id="@+id/longBreakEt"
+        android:layout_width="72dp"
+        android:layout_height="37dp"
+        android:ems="10"
+        android:gravity="center"
+        android:inputType="number"
+        android:maxLength="2"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/longBreakBtn"
+        app:layout_constraintEnd_toEndOf="@+id/longBreakBtn"
+        app:layout_constraintStart_toStartOf="@+id/longBreakBtn"
+        app:layout_constraintTop_toTopOf="@+id/longBreakBtn"
+        app:layout_constraintVertical_bias="0.662" />
+
+    <EditText
+        android:id="@+id/sessionEt"
+        android:layout_width="72dp"
+        android:layout_height="37dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:inputType="number"
+
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/sessionBtn"
+        app:layout_constraintEnd_toEndOf="@+id/sessionBtn"
+        app:layout_constraintHorizontal_bias="0.521"
+        app:layout_constraintStart_toStartOf="@+id/sessionBtn"
+        app:layout_constraintTop_toTopOf="@+id/sessionBtn"
+        app:layout_constraintVertical_bias="0.561" />
+
+    <ImageButton
+        android:id="@+id/SaveBtn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="144dp"
+        android:layout_marginTop="128dp"
+        android:layout_marginEnd="147dp"
+        android:layout_marginBottom="51dp"
+        android:backgroundTint="@color/white"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView5"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/yellowtomato" />
+
+    <TextView
+        android:id="@+id/textView6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="저장"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/SaveBtn"
+        app:layout_constraintEnd_toEndOf="@+id/SaveBtn"
+        app:layout_constraintHorizontal_bias="0.515"
+        app:layout_constraintStart_toStartOf="@+id/SaveBtn"
+        app:layout_constraintTop_toTopOf="@+id/SaveBtn"
+        app:layout_constraintVertical_bias="0.611" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
