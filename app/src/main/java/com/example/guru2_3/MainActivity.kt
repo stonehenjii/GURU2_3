@@ -1,5 +1,7 @@
 package com.example.guru2_3
 
+import DatabaseHelper
+import TodoAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -16,34 +18,42 @@ import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.util.Timer
 import kotlin.concurrent.timer
 
 class MainActivity : AppCompatActivity() {
-
-    private var time = 0;
-    private var timerTask : Timer? = null
-    private var isRunning = false
+    //타이머 DB 연동 변수
+    private var userId = 1
     private var studyTime = 25
     private var shortBreak = 5
     private var longBreak = 15
     private var session = 8
-    private var isTimeSet = false
-
     private var sessionCount = 0
+    //타이머 추가 변수
+    private var time = 0;
+    private var timerTask : Timer? = null
+    private var isRunning = false
+    private var isTimeSet = false
     private var isBreak = false
+    //투두리스트 변수
 
     lateinit var  minTextView : TextView
     lateinit var  secTextView: TextView
     lateinit var  setButton: ImageButton
     lateinit var  pauseButton: ImageButton
     lateinit var  resetButton: ImageButton
+    lateinit var  listBtn : ImageButton
+    lateinit var  todoListEdt : EditText
+    lateinit var  todoAdapter: TodoAdapter
+    lateinit var  recyclerView: RecyclerView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // enableEdgeToEdge() // 이 부분은 최신 UI 기능으로, 필요 없다면 주석 처리하거나 삭제해도 됩니다.
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_test)
 
         //값을 가져옵니다.
         studyTime = intent.getIntExtra("집중시간", 25)
@@ -67,7 +77,23 @@ class MainActivity : AppCompatActivity() {
         setButton = findViewById(R.id.setButton)
         pauseButton = findViewById(R.id.pauseButton)
         resetButton = findViewById(R.id.resetButton)
+        listBtn = findViewById(R.id.listBtn)
+        todoListEdt = findViewById(R.id.todoListEdt)
+        recyclerView = findViewById(R.id.recyclerView)
 
+        todoAdapter = TodoAdapter(mutableListOf())
+        recyclerView.adapter = todoAdapter
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        listBtn.setOnClickListener {
+            val text = todoListEdt.text.toString()
+            if (text.isNotBlank()) {
+                todoAdapter.addItem(TodoItem(text))
+                todoListEdt.text.clear()
+            } else {
+                Toast.makeText(this, "할 일을 입력하세요", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         setButton.setOnClickListener {
             if (!isTimeSet) {
@@ -98,21 +124,21 @@ class MainActivity : AppCompatActivity() {
             reset()
         }
 
-        // --- 여기에 DatabaseHelper 관련 코드 추가 ---
-        // 1. DatabaseHelper 인스턴스 생성
-        val dbHelper = DatabaseHelper(this)
-
-        // 2. 새로운 메모 추가
-        dbHelper.addMemo("DB Helper 테스트 메모")
-        Log.d("DatabaseTest", "새로운 메모를 추가했습니다.")
-
-        // 3. 모든 메모를 불러와서 로그로 출력
-        val memoList = dbHelper.getAllMemos()
-        Log.d("DatabaseTest", "--- 전체 메모 목록 ---")
-        for (memo in memoList) {
-            Log.d("DatabaseTest", "ID: ${memo.id}, 내용: ${memo.content}")
-        }
-        // ------------------------------------
+//        // --- 여기에 DatabaseHelper 관련 코드 추가 ---
+//        // 1. DatabaseHelper 인스턴스 생성
+//        val dbHelper = DatabaseHelper(this)
+//
+//        // 2. 새로운 메모 추가
+//        dbHelper.addMemo("DB Helper 테스트 메모")
+//        Log.d("DatabaseTest", "새로운 메모를 추가했습니다.")
+//
+//        // 3. 모든 메모를 불러와서 로그로 출력
+//        val memoList = dbHelper.getAllMemos()
+//        Log.d("DatabaseTest", "--- 전체 메모 목록 ---")
+//        for (memo in memoList) {
+//            Log.d("DatabaseTest", "ID: ${memo.id}, 내용: ${memo.content}")
+//        }
+//        // ------------------------------------
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

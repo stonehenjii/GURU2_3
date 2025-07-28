@@ -119,13 +119,82 @@
 
     <CalendarView
         android:id="@+id/calendarView2"
-        android:layout_width="347dp"
-        android:layout_height="286dp"
+        android:layout_width="371dp"
+        android:layout_height="303dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/toolbar"
-        app:layout_constraintVertical_bias="0.403" />
+        app:layout_constraintVertical_bias="0.383" />
+
+    <EditText
+        android:id="@+id/todoListEdt"
+        android:layout_width="177dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="21dp"
+        android:background="@drawable/spinner_background"
+        android:ems="10"
+        android:hint="할일 목록"
+        android:inputType="text"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
+        app:layout_constraintEnd_toStartOf="@+id/listBtn"
+        app:layout_constraintHorizontal_bias="0.11"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/calendarView2"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="344dp"
+        android:layout_height="147dp"
+        android:layout_marginTop="11dp"
+        android:layout_marginBottom="40dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.492"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/todoListEdt" />
+
+    <ImageButton
+        android:id="@+id/listBtn"
+        android:layout_width="56dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="33dp"
+        android:backgroundTint="@color/white"
+        android:padding="1dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/calendarView2"
+        app:layout_constraintVertical_bias="0.342"
+        app:srcCompat="@drawable/maintomato" />
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="추가"
+        app:layout_constraintBottom_toBottomOf="@+id/listBtn"
+        app:layout_constraintEnd_toEndOf="@+id/listBtn"
+        app:layout_constraintStart_toStartOf="@+id/listBtn"
+        app:layout_constraintTop_toTopOf="@+id/listBtn" />
+
+    <Spinner
+        android:id="@+id/spinner2"
+        android:layout_width="122dp"
+        android:layout_height="33dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/spinner_background"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
+        app:layout_constraintEnd_toStartOf="@+id/listBtn"
+        app:layout_constraintHorizontal_bias="0.352"
+        app:layout_constraintStart_toEndOf="@+id/todoListEdt"
+        app:layout_constraintTop_toBottomOf="@+id/calendarView2"
+        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
