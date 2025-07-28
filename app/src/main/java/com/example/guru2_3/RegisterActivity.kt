@@ -122,8 +122,8 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setClickListeners() {
         // 로그인 클릭 (아이콘 + 텍스트)
-        regLoginicon.setOnClickListener { movetoLoginPage() }
-        regLoginText.setOnClickListener { movetoLoginPage() }
+        regLoginicon.setOnClickListener { validateAndMoveToLogin() }
+        regLoginText.setOnClickListener { validateAndMoveToLogin() }
 
     }
 
@@ -133,32 +133,7 @@ class RegisterActivity : AppCompatActivity() {
         val confirmPassword = regConfirmPwEditText.text.toString().trim()
         val nickname = regNicknameEditText.text.toString().trim()
 
-        // 입력값 검증 - performRegister()와 동일한 검증 로직
-        if (id.isEmpty()) {
-            Toast.makeText(this, "아이디를 입력해주세요.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (password.isEmpty()) {
-            Toast.makeText(this, "비밀번호를 입력해주세요.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (confirmPassword.isEmpty()) {
-            Toast.makeText(this, "비밀번호 확인을 입력해주세요.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (nickname.isEmpty()) {
-            Toast.makeText(this, "닉네임을 입력해주세요.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 비밀번호 확인
-        if (password != confirmPassword) {
-            Toast.makeText(this, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        performRegister()
 
         // 🔥 모든 검증 통과 시에만 로그인 페이지로 이동
         movetoLoginPage()

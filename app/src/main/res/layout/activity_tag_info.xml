@@ -7,70 +7,115 @@
     android:layout_height="match_parent"
     tools:context=".TagInfoActivity">
 
-    <LinearLayout
-        android:id="@+id/tagContainer"
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="293dp"
         android:layout_height="561dp"
         android:layout_marginStart="50dp"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="104dp"
         android:layout_marginEnd="50dp"
-        android:background="#F44336"
-        android:orientation="vertical"
+        android:layout_marginBottom="66dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <EditText
-            android:id="@+id/createTagNameEditText"
+        <LinearLayout
+            android:id="@+id/tagContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:ems="10"
-            android:hint="태그 이름"
-            android:inputType="text"
-            android:textStyle="bold" />
+            android:background="#F44336"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/createTagFinishRate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="20dp"
-            android:text="완수율"
-            android:textColor="#000000"
-            android:textSize="20sp" />
+            <!-- 기존의 모든 내용들 그대로 유지 -->
+            <TextView
+                android:id="@+id/createTagNameTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="태그 이름"
+                android:textColor="@android:color/black"
+                android:textSize="18sp" />
 
-        <Switch
-            android:id="@+id/createTagDateSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="20dp"
-            android:gravity="center_horizontal|left"
-            android:text="시험일정"
-            android:textColor="#050000"
-            android:textSize="20sp" />
+            <TextView
+                android:id="@+id/createTagFinishRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="20dp"
+                android:text="완수율"
+                android:textColor="#000000"
+                android:textSize="20sp" />
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="20dp"
-            android:text="시험날짜"
-            android:textColor="#000000"
-            android:textSize="20sp" />
+            <Switch
+                android:id="@+id/createTagDateSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="20dp"
+                android:gravity="center_horizontal|left"
+                android:text="시험일정"
+                android:textColor="#050000"
+                android:textSize="20sp" />
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/createTagDateText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="날짜를 선택하세요"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:visibility="gone"
+                android:clickable="true" />
 
+            <EditText
+                android:id="@+id/scoreInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="성적 입력"
+                android:inputType="number" />
+
+
+
+            <!-- 성적 그래프 -->
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/scoreChart"
+                android:layout_width="match_parent"
+                android:layout_height="145dp"
+                android:layout_marginTop="16dp" />
+
+            <!-- 시간 그래프 -->
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/timeChart"
+                android:layout_width="match_parent"
+                android:layout_height="145dp"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 나머지 ImageView, TextView는 그대로 유지 -->
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/tagMoveicon"
         android:layout_width="69dp"
         android:layout_height="61dp"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="35dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="40dp"
         android:src="@drawable/tomato3"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tagMoveText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="56dp"
+        android:text="Tag"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="@+id/tagMoveicon"
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

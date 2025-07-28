@@ -5,17 +5,15 @@ import android.database.sqlite.SQLiteOpenHelper
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    // --- 데이터 모델 클래스들 ---
     data class User(val id: Long, val email: String, val nickname: String)
-    data class Tag(val id: Long, val userId: Long, val name: String)
+    data class Tag(val id: Long, val userId: Long, val tag_name: String)
     data class Task(val id: Long, val tagId: Long, val title: String, val isCompleted: Boolean)
     data class FocusTimer(val id: Long, val userId: Long, val totalDuration: Int)
 
     companion object {
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 3
         private const val DATABASE_NAME = "PomodoroStudy.db"
 
-        // 테이블 이름 정의
         private const val TABLE_USERS = "users"
         private const val TABLE_TAGS = "tags"
         private const val TABLE_TASKS = "tasks"
@@ -23,8 +21,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val TABLE_EXAM_INFOS = "exam_infos"
         private const val TABLE_MOCK_EXAMS = "mock_exams"
         private const val TABLE_SETTINGS = "settings"
+        private const val TABLE_SCORE_RECORDS = "score_records"
+        private const val TABLE_TIME_RECORDS = "time_records"
 
-        // 공통 컬럼
         private const val KEY_ID = "id"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_TAG_ID = "tag_id"
@@ -32,8 +31,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        // --- 테이블 생성 SQL 문 ---
-
         val CREATE_USERS_TABLE = """
             CREATE TABLE $TABLE_USERS (
                 $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,8 +47,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             CREATE TABLE $TABLE_TAGS (
                 $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $KEY_USER_ID INTEGER NOT NULL,
-                name TEXT NOT NULL,
+                tag_name TEXT NOT NULL,
                 d_day TEXT,
+                created_date INTEGER,
                 $KEY_CREATED_AT TEXT,
                 FOREIGN KEY($KEY_USER_ID) REFERENCES $TABLE_USERS($KEY_ID)
             )
@@ -131,7 +129,27 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             )
         """.trimIndent()
 
-        // --- 모든 테이블 실행 ---
+        val CREATE_SCORE_RECORDS_TABLE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_SCORE_RECORDS (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tag_id INTEGER NOT NULL,
+                score REAL NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY(tag_id) REFERENCES $TABLE_TAGS($KEY_ID)
+            )
+        """.trimIndent()
+
+        val CREATE_TIME_RECORDS_TABLE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_TIME_RECORDS (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tag_id INTEGER NOT NULL,
+                study_time REAL NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY(tag_id) REFERENCES $TABLE_TAGS($KEY_ID)
+            )
+        """.trimIndent()
+
+
         db?.execSQL(CREATE_USERS_TABLE)
         db?.execSQL(CREATE_TAGS_TABLE)
         db?.execSQL(CREATE_TASKS_TABLE)
@@ -139,11 +157,13 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         db?.execSQL(CREATE_EXAM_INFOS_TABLE)
         db?.execSQL(CREATE_MOCK_EXAMS_TABLE)
         db?.execSQL(CREATE_SETTINGS_TABLE)
+        db?.execSQL(CREATE_SCORE_RECORDS_TABLE)
+        db?.execSQL(CREATE_TIME_RECORDS_TABLE)
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        // 개발 중에는 간단하게 기존 테이블을 삭제하고 새로 만드는 방식을 사용합니다.
-        // 실제 배포된 앱에서는 사용자 데이터를 보존하기 위해 다른 마이그레이션 방법을 사용해야 합니다.
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_SCORE_RECORDS")
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TIME_RECORDS")
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_SETTINGS")
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_MOCK_EXAMS")
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_EXAM_INFOS")
@@ -179,7 +199,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put(KEY_USER_ID, userId)
-            put("name", name)
+            put("tag_name", name)
         }
         return db.insert(TABLE_TAGS, null, values)
     }
@@ -219,4 +239,164 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         cursor.close()
         return taskList
     }
+    // 새 태그 생성
+    fun createTag(tagName: String): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            //put("name", tagName)
+            put("tag_name", tagName)
+            put("created_date", System.currentTimeMillis())
+            put("user_id", 1)
+        }
+        return db.insert("tags", null, values)
+    }
+
+    // 태그 정보 가져오기
+    fun getTag(tagId: Long): String? {
+        val db = readableDatabase
+        val cursor = db.query(
+            "tags",
+            arrayOf("tag_name"),
+            "id = ?",
+            arrayOf(tagId.toString()),
+            null, null, null
+        )
+
+        return if (cursor.moveToFirst()) {
+            val tagName = cursor.getString(cursor.getColumnIndexOrThrow("tag_name"))
+            cursor.close()
+            tagName
+        } else {
+            cursor.close()
+            null
+        }
+    }
+
+    // 모든 태그 가져오기
+    fun getAllTags(): List<Pair<Long, String>> {
+        val tags = mutableListOf<Pair<Long, String>>()
+        val db = readableDatabase
+        val cursor = db.query("tags", arrayOf("id", "tag_name"), null, null, null, null, "id ASC")
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+            val name = cursor.getString(cursor.getColumnIndexOrThrow("tag_name"))
+            tags.add(Pair(id, name))
+        }
+        cursor.close()
+        return tags
+    }
+
+
+
+
+    //성적 데이터 추가
+    fun addScoreData(tagId: Long, score: Float, date: String = getCurrentDate()): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("tag_id", tagId)
+            put("score", score)
+            put("date", date)
+        }
+        return db.insert("score_records", null, values)
+    }
+
+//시간데이터추가
+    fun addTimeData(tagId: Long, time: Float, date: String = getCurrentDate()): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("tag_id", tagId)
+            put("study_time", time)
+            put("date", date)
+        }
+        return db.insert("time_records", null, values)
+    }
+    // 성적 데이터 조회
+    fun getScoreData(tagId: Long): List<Pair<Float, Float>> {
+        val scoreList = mutableListOf<Pair<Float, Float>>()
+        val db = this.readableDatabase
+        val cursor = db.query("score_records", null, "tag_id = ?", arrayOf(tagId.toString()), null, null, "date ASC")
+
+        var index = 0f
+        if (cursor.moveToFirst()) {
+            do {
+                val scoreIndex = cursor.getColumnIndex("score")
+                if (scoreIndex != -1) {
+                    val score = cursor.getFloat(scoreIndex)
+                    scoreList.add(Pair(index, score))
+                    index++
+                }
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return scoreList
+    }
+
+    // 시간 데이터 조회
+    fun getTimeData(tagId: Long): List<Pair<Float, Float>> {
+        val timeList = mutableListOf<Pair<Float, Float>>()
+        val db = this.readableDatabase
+        val cursor = db.query("time_records", null, "tag_id = ?", arrayOf(tagId.toString()), null, null, "date ASC")
+
+        var index = 0f
+        if (cursor.moveToFirst()) {
+            do {
+                val timeIndex = cursor.getColumnIndex("study_time")
+                if (timeIndex != -1) {
+                    val time = cursor.getFloat(timeIndex)
+                    timeList.add(Pair(index, time))
+                    index++
+                }
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return timeList
+    }
+
+    //taginfo -> 태그 이름 저장
+    fun updateTagName(tagId: Long, newName: String): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("tag_name", newName)
+            put("tag_name", newName)
+        }
+        return db.update("tags", values, "id = ?", arrayOf(tagId.toString()))
+    }
+
+    private fun getCurrentDate(): String {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        return sdf.format(java.util.Date())
+    }
+
+    // 시험날짜 업데이트
+    fun updateExamDate(tagId: Long, examDate: String?): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("d_day", examDate)
+        }
+        return db.update("tags", values, "id = ?", arrayOf(tagId.toString()))
+    }
+
+    // 시험날짜 조회
+    fun getExamDate(tagId: Long): String? {
+        val db = readableDatabase
+        val cursor = db.query(
+            "tags",
+            arrayOf("d_day"),
+            "id = ?",
+            arrayOf(tagId.toString()),
+            null, null, null
+        )
+
+        return if (cursor.moveToFirst()) {
+            val examDate = cursor.getString(cursor.getColumnIndexOrThrow("d_day"))
+            cursor.close()
+            examDate
+        } else {
+            cursor.close()
+            null
+        }
+    }
+
+
 }
