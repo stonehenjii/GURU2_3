@@ -178,13 +178,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="추가"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="@+id/listBtn"
         app:layout_constraintEnd_toEndOf="@+id/listBtn"
         app:layout_constraintStart_toStartOf="@+id/listBtn"
         app:layout_constraintTop_toTopOf="@+id/listBtn" />
 
     <Spinner
-        android:id="@+id/spinner2"
+        android:id="@+id/spinner"
         android:layout_width="107dp"
         android:layout_height="28dp"
         android:layout_marginStart="1dp"

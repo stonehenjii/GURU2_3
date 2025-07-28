@@ -24,9 +24,13 @@ class TagActivity : AppCompatActivity() {
     private lateinit var tagaddText: TextView
     private lateinit var dbHelper: DatabaseHelper
     private var tagCounter = 0 // 태그 고유 ID 생성용
+    private var userId: Long = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        userId = intent.getLongExtra("USER_ID", 0)
+
         enableEdgeToEdge()
         setContentView(R.layout.activity_tag)
 
@@ -111,6 +115,7 @@ class TagActivity : AppCompatActivity() {
         // 데이터베이스에 새 태그 생성
         val tagId = dbHelper.createTag(tagName)
         val newTag = createTagView(tagName, tagId, isEditMode = false)
+        val tag = dbHelper.addTag(userId, tagName)
         scrollContainer.addView(newTag)
 
         Toast.makeText(this, "새 태그가 추가되었습니다!", Toast.LENGTH_SHORT).show()
@@ -208,7 +213,7 @@ class TagActivity : AppCompatActivity() {
     private fun loadExistingTags() {
         scrollContainer.removeAllViews() // 기존 뷰들 제거
 
-        val existingTags = dbHelper.getAllTags()
+        val existingTags = dbHelper.getAllTags(userId)
         for ((tagId, tagName) in existingTags) {
             val tagView = createTagView(tagName, tagId, isEditMode = true)
             scrollContainer.addView(tagView)

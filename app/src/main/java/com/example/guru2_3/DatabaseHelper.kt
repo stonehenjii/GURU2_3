@@ -273,7 +273,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // 모든 태그 가져오기
-    fun getAllTags(): List<Pair<Long, String>> {
+    fun getAllTags(userId: Long): List<Pair<Long, String>> {
         val tags = mutableListOf<Pair<Long, String>>()
         val db = readableDatabase
         val cursor = db.query("tags", arrayOf("id", "tag_name"), null, null, null, null, "id ASC")
@@ -301,7 +301,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return db.insert("score_records", null, values)
     }
 
-//시간데이터추가
+    //시간데이터추가
     fun addTimeData(tagId: Long, time: Float, date: String = getCurrentDate()): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
@@ -397,6 +397,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             null
         }
     }
+
+
 
 
 }

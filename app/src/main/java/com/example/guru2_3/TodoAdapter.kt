@@ -25,7 +25,7 @@ class TodoAdapter(
 
     override fun onBindViewHolder(holder: TodoViewHolder, position: Int) {
         val item = items[position]
-        holder.textView.text = item.text
+        holder.textView.text = "${item.tagName} : ${item.text}"
         // 체크박스 없으니 아래 코드 삭제
         // holder.checkbox.isChecked = item.isDone
         // holder.checkbox.setOnCheckedChangeListener { _, isChecked ->

@@ -3,21 +3,33 @@ package com.example.guru2_3
 import DatabaseHelper
 import TodoAdapter
 import android.content.Intent
+
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.widget.Toolbar
 
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Timer
@@ -25,7 +37,6 @@ import kotlin.concurrent.timer
 
 class MainActivity : AppCompatActivity() {
     //타이머 DB 연동 변수
-    private var userId = 1
     private var studyTime = 25
     private var shortBreak = 5
     private var longBreak = 15
@@ -37,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private var isRunning = false
     private var isTimeSet = false
     private var isBreak = false
+    private var userId: Long = 0
     //투두리스트 변수
 
     lateinit var  minTextView : TextView
@@ -48,6 +60,11 @@ class MainActivity : AppCompatActivity() {
     lateinit var  todoListEdt : EditText
     lateinit var  todoAdapter: TodoAdapter
     lateinit var  recyclerView: RecyclerView
+    lateinit var spinner: Spinner
+    lateinit var spinnerAdapter: ArrayAdapter<String>
+
+
+    private lateinit var dbHelper: DatabaseHelper
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,11 +72,15 @@ class MainActivity : AppCompatActivity() {
         // enableEdgeToEdge() // 이 부분은 최신 UI 기능으로, 필요 없다면 주석 처리하거나 삭제해도 됩니다.
         setContentView(R.layout.activity_test)
 
+        dbHelper = DatabaseHelper(this)
+
         //값을 가져옵니다.
         studyTime = intent.getIntExtra("집중시간", 25)
         shortBreak = intent.getIntExtra("짧은휴식", 5)
         longBreak = intent.getIntExtra("긴휴식", 15)
         session = intent.getIntExtra("세션수", 8)
+        userId = intent.getLongExtra("USER_ID", 0)
+
         Log.d("MainActivity", "studyTime: $studyTime, shortBreak: $shortBreak, longBreak: $longBreak, session: $session")
 
         // 상태바 색 변경 코드 추가
@@ -80,15 +101,35 @@ class MainActivity : AppCompatActivity() {
         listBtn = findViewById(R.id.listBtn)
         todoListEdt = findViewById(R.id.todoListEdt)
         recyclerView = findViewById(R.id.recyclerView)
+        spinner = findViewById(R.id.spinner)
 
         todoAdapter = TodoAdapter(mutableListOf())
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = todoAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
+        // 구분선 추가
+        val dividerItemDecoration = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(dividerItemDecoration)
+
+        spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, mutableListOf())
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = spinnerAdapter
+
+
+        val tagPairs = dbHelper.getAllTags(userId)  // List<Pair<Long, String>>
+        val tagNames = tagPairs.map { it.second }   // List<String>
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tagNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+
+
         listBtn.setOnClickListener {
             val text = todoListEdt.text.toString()
+            val selectedTag = spinner.selectedItem as? String ?: "태그 없음"
             if (text.isNotBlank()) {
-                todoAdapter.addItem(TodoItem(text))
+                todoAdapter.addItem(TodoItem(text, selectedTag))
                 todoListEdt.text.clear()
             } else {
                 Toast.makeText(this, "할 일을 입력하세요", Toast.LENGTH_SHORT).show()
@@ -151,6 +192,7 @@ class MainActivity : AppCompatActivity() {
             R.id.profile -> {
                 // 사용자 설정 눌렀을 때 동작
                 val intent = Intent(this, TagActivity::class.java)
+                intent.putExtra("USER_ID", userId)
                 startActivity(intent)
                 return true
             }
@@ -240,6 +282,20 @@ class MainActivity : AppCompatActivity() {
             secTextView.text = String.format("%02d", sec)
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadExistingTags()  // ← 태그 목록 다시 불러옴 (DB에서)
+    }
+
+    private fun loadExistingTags() {
+        val existingTags = dbHelper.getAllTags(userId)
+
+        // Spinner에 연결된 어댑터 갱신
+        spinnerAdapter.clear()
+        spinnerAdapter.addAll(existingTags.map { it.second }) // 태그 이름만 추출해서 추가
+        spinnerAdapter.notifyDataSetChanged()
     }
 
 }
