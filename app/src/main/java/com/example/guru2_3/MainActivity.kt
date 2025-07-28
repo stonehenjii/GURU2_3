@@ -150,6 +150,8 @@ class MainActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.profile -> {
                 // 사용자 설정 눌렀을 때 동작
+                val intent = Intent(this, TagActivity::class.java)
+                startActivity(intent)
                 return true
             }
             R.id.timerSetting -> {

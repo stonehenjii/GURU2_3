@@ -5,7 +5,7 @@
     <item
         android:id="@+id/profile"
         android:title="사용자 설정"
-        android:icon="@drawable/profileicon"
+        android:icon="@drawable/baseline_bookmark_24"
         app:showAsAction="always" />
 
     <item

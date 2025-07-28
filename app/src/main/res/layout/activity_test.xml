@@ -129,9 +129,10 @@
 
     <EditText
         android:id="@+id/todoListEdt"
-        android:layout_width="177dp"
-        android:layout_height="34dp"
+        android:layout_width="189dp"
+        android:layout_height="28dp"
         android:layout_marginStart="5dp"
+        android:layout_marginTop="4dp"
         android:layout_marginEnd="21dp"
         android:background="@drawable/spinner_background"
         android:ems="10"
@@ -139,20 +140,20 @@
         android:inputType="text"
         app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toStartOf="@+id/listBtn"
-        app:layout_constraintHorizontal_bias="0.11"
+        app:layout_constraintHorizontal_bias="0.111"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/calendarView2"
         app:layout_constraintVertical_bias="0.0" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:layout_width="344dp"
-        android:layout_height="147dp"
-        android:layout_marginTop="11dp"
+        android:layout_width="370dp"
+        android:layout_height="149dp"
         android:layout_marginBottom="40dp"
+        android:background="@drawable/recycle_background_color"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.492"
+        app:layout_constraintHorizontal_bias="0.487"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/todoListEdt" />
 
@@ -169,7 +170,7 @@
         app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/calendarView2"
-        app:layout_constraintVertical_bias="0.342"
+        app:layout_constraintVertical_bias="0.195"
         app:srcCompat="@drawable/maintomato" />
 
     <TextView
@@ -184,17 +185,17 @@
 
     <Spinner
         android:id="@+id/spinner2"
-        android:layout_width="122dp"
-        android:layout_height="33dp"
+        android:layout_width="107dp"
+        android:layout_height="28dp"
         android:layout_marginStart="1dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="5dp"
         android:background="@drawable/spinner_background"
         app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toStartOf="@+id/listBtn"
-        app:layout_constraintHorizontal_bias="0.352"
+        app:layout_constraintHorizontal_bias="0.476"
         app:layout_constraintStart_toEndOf="@+id/todoListEdt"
         app:layout_constraintTop_toBottomOf="@+id/calendarView2"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.476" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
