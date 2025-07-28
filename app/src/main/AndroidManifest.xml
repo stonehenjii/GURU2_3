@@ -17,16 +17,13 @@
             android:name=".TagInfoActivity"
             android:exported="false" />
         <activity
-            android:name=".TagActivity"
+            android:name=".LoginActivity"
             android:exported="false" />
-<!--        <activity-->
-<!--            android:name=".TestActivity"-->
-<!--            android:exported="false" />-->
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".TagActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

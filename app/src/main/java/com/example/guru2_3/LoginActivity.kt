@@ -9,13 +9,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.serialization.json.Json
-import retrofit2.Retrofit
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import okhttp3.MediaType.Companion.toMediaType
-
-
-
 
 
 class LoginActivity : AppCompatActivity() {
@@ -113,18 +106,18 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
-        private fun performRegister() {
-            // 회원가입 화면으로 이동
-            Toast.makeText(this, "회원가입 함수 진입!", Toast.LENGTH_SHORT).show()
+    private fun performRegister() {
+        // 회원가입 화면으로 이동
+        Toast.makeText(this, "회원가입 함수 진입!", Toast.LENGTH_SHORT).show()
 
-            val intent = Intent(this, RegisterActivity::class.java)
-            startActivity(intent)
-        }
-        private fun movetotimer() {
-        // 타이머 화면으로 이동
-        val intent = Intent(this, TestActivity::class.java)
+        val intent = Intent(this, RegisterActivity::class.java)
         startActivity(intent)
     }
+    private fun movetotimer() {
+        // 타이머 화면으로 이동(현재는 임시로 tagactivity 화면으로 이동합니다)
+        val intent = Intent(this, TagActivity::class.java)
+        startActivity(intent)
     }
+}
 
 
