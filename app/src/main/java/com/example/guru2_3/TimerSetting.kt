@@ -1,5 +1,6 @@
 package com.example.guru2_3
 
+import DatabaseHelper
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -18,10 +19,14 @@ class TimerSetting : AppCompatActivity() {
     var shortBreak = 5
     var longBreak = 15
     var session = 8
+    lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_timer_setting)
+
+        // 데이터베이스 헬퍼 초기화
+        dbHelper = DatabaseHelper(this)
 
         // 데이터베이스에서 저장된 설정 불러오기
         val savedSettings = dbHelper.getDefaultTimerSettings()
@@ -29,6 +34,12 @@ class TimerSetting : AppCompatActivity() {
         shortBreak = savedSettings.shortBreak
         longBreak = savedSettings.longBreak
         session = savedSettings.session
+
+        if (savedSettings != null) {
+            Log.d("DBCheck", "Saved timer settings: studyTime=${savedSettings.studyTime}, shortBreak=${savedSettings.shortBreak}, longBreak=${savedSettings.longBreak}, session=${savedSettings.session}")
+        } else {
+            Log.d("DBCheck", "No timer settings found in DB")
+        }
 
         // 상태바 색 변경 코드 추가
         // window.statusBarColor = ContextCompat.getColor(this, R.color.mainRed)
@@ -87,4 +98,21 @@ class TimerSetting : AppCompatActivity() {
 
 
     }
+    override fun onResume() {
+        super.onResume()
+
+        val savedSettings = dbHelper.getLatestTimerSettings() ?: return
+
+        studyTime = savedSettings.studyTime
+        shortBreak = savedSettings.shortBreak
+        longBreak = savedSettings.longBreak
+        session = savedSettings.session
+
+        findViewById<EditText>(R.id.studyTimeEt).setText(studyTime.toString())
+        findViewById<EditText>(R.id.shortBreakEt).setText(shortBreak.toString())
+        findViewById<EditText>(R.id.longBreakEt).setText(longBreak.toString())
+        findViewById<EditText>(R.id.sessionEt).setText(session.toString())
+    }
+
+
 }
