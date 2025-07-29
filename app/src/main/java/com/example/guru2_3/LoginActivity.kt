@@ -82,22 +82,21 @@ class LoginActivity : AppCompatActivity() {
         }
 
         val dbHelper = DatabaseHelper(this)
+        val nickname = username
+        val newUserId = dbHelper.addUser(username, password, nickname)
 
         // 🔥 먼저 기존 사용자인지 확인
         if (dbHelper.validateUser(username, password)) {
             // 기존 사용자 - 로그인 성공
             Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
-            movetotimer()
+            movetotimer(newUserId)
         } else {
-            // 🔥 새로운 사용자 - 자동 회원가입
-            try {
-                // 닉네임을 아이디와 동일하게 설정 (또는 다른 로직 사용)
-                val nickname = username // 또는 "${username}_user" 등
 
-                val success = dbHelper.addUser(username, password, nickname)
-                if (success != -1L) {
+            try {
+                if (newUserId != -1L) {
                     Toast.makeText(this, "자동 회원가입 완료! 로그인됩니다.", Toast.LENGTH_SHORT).show()
-                    movetotimer()
+                    movetotimer(newUserId)
+
                 } else {
                     Toast.makeText(this, "회원가입 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
                 }
@@ -113,10 +112,12 @@ class LoginActivity : AppCompatActivity() {
         val intent = Intent(this, RegisterActivity::class.java)
         startActivity(intent)
     }
-    private fun movetotimer() {
+    private fun movetotimer(userId: Long) {
         // 타이머 화면으로 이동(현재는 임시로 tagactivity 화면으로 이동합니다)
         val intent = Intent(this, TagActivity::class.java)
+        intent.putExtra("USER_ID", userId)
         startActivity(intent)
+        finish()
     }
 }
 

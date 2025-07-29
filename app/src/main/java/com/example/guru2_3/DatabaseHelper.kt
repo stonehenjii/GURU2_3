@@ -226,6 +226,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return isValid
     }
 
+    fun getUserId(userid: String, password: String): Long {
+        val db = readableDatabase
+        val cursor = db.query("users", arrayOf("id"), "user_id=? AND password=?", arrayOf(userid, password), null, null, null)
+        return if (cursor.moveToFirst()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+            cursor.close()
+            id
+        } else {
+            cursor.close()
+            -1L
+        }
+    }
+
+
 
     fun addTag(userId: Long, name: String): Long {
         val db = this.writableDatabase
