@@ -74,11 +74,12 @@ class MainActivity : AppCompatActivity() {
 
         dbHelper = DatabaseHelper(this)
 
-        //값을 가져옵니다.
-        studyTime = intent.getIntExtra("집중시간", 25)
-        shortBreak = intent.getIntExtra("짧은휴식", 5)
-        longBreak = intent.getIntExtra("긴휴식", 15)
-        session = intent.getIntExtra("세션수", 8)
+        //데이터베이스에서 저장된 설정 불러오기
+        val savedSettings = dbHelper.getDefaultTimerSettings()
+        studyTime = intent.getIntExtra("집중시간", savedSettings.studyTime)
+        shortBreak = intent.getIntExtra("짧은휴식", savedSettings.shortBreak)
+        longBreak = intent.getIntExtra("긴휴식", savedSettings.longBreak)
+        session = intent.getIntExtra("세션수", savedSettings.session)
         userId = intent.getLongExtra("USER_ID", 0)
 
         Log.d("MainActivity", "studyTime: $studyTime, shortBreak: $shortBreak, longBreak: $longBreak, session: $session")
@@ -246,6 +247,9 @@ class MainActivity : AppCompatActivity() {
                     if (sessionCount >= session) {
                         runOnUiThread {
                             Toast.makeText(this@MainActivity, "모든 세션이 완료되었습니다!", Toast.LENGTH_SHORT).show()
+                            
+                            // 타이머 완료 시 데이터베이스에 기록 저장
+                            dbHelper.saveTimerSettings(studyTime, shortBreak, longBreak, session)
                         }
                     } else {
                         time = studyTime * 60 * 100

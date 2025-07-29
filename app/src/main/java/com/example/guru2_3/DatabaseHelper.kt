@@ -8,7 +8,13 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     data class User(val id: Long, val email: String, val nickname: String)
     data class Tag(val id: Long, val userId: Long, val tag_name: String)
     data class Task(val id: Long, val tagId: Long, val title: String, val isCompleted: Boolean)
-    data class FocusTimer(val id: Long, val userId: Long, val totalDuration: Int)
+    data class FocusTimer(
+        val id: Long, 
+        val studyTime: Int, 
+        val shortBreak: Int, 
+        val longBreak: Int, 
+        val session: Int
+    )
 
     companion object {
         private const val DATABASE_VERSION = 3
@@ -72,16 +78,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val CREATE_FOCUS_TIMERS_TABLE = """
             CREATE TABLE $TABLE_FOCUS_TIMERS (
                 $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_USER_ID INTEGER NOT NULL,
-                start_time TEXT,
-                end_time TEXT,
-                focus_time INTEGER,
-                short_break INTEGER,
-                long_break INTEGER,
-                session_count INTEGER,
-                total_duration INTEGER,
-                asmr_used INTEGER DEFAULT 0,
-                FOREIGN KEY($KEY_USER_ID) REFERENCES $TABLE_USERS($KEY_ID)
+                studyTime INTEGER NOT NULL,
+                shortBreak INTEGER NOT NULL,
+                longBreak INTEGER NOT NULL,
+                session INTEGER NOT NULL
             )
         """.trimIndent()
 
@@ -121,10 +121,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             CREATE TABLE $TABLE_SETTINGS (
                 $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $KEY_USER_ID INTEGER UNIQUE NOT NULL,
-                focus_time INTEGER,
-                short_break INTEGER,
-                long_break INTEGER,
-                sessions_before_long_break INTEGER,
+                studyTime INTEGER,
+                shortBreak INTEGER,
+                longBreak INTEGER,
+                sessionsBeforeLongBreak INTEGER,
                 FOREIGN KEY($KEY_USER_ID) REFERENCES $TABLE_USERS($KEY_ID)
             )
         """.trimIndent()
@@ -143,7 +143,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             CREATE TABLE IF NOT EXISTS $TABLE_TIME_RECORDS (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tag_id INTEGER NOT NULL,
-                study_time REAL NOT NULL,
+                studyTime REAL NOT NULL,
                 date TEXT NOT NULL,
                 FOREIGN KEY(tag_id) REFERENCES $TABLE_TAGS($KEY_ID)
             )
@@ -162,16 +162,47 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_SCORE_RECORDS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TIME_RECORDS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_SETTINGS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_MOCK_EXAMS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_EXAM_INFOS")
+        // 기존 테이블들 삭제
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_FOCUS_TIMERS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TASKS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TAGS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
-        onCreate(db)
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_SETTINGS")
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TIME_RECORDS")
+        
+        // 새로운 구조로 테이블들 생성
+        val CREATE_FOCUS_TIMERS_TABLE = """
+            CREATE TABLE $TABLE_FOCUS_TIMERS (
+                $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                studyTime INTEGER NOT NULL,
+                shortBreak INTEGER NOT NULL,
+                longBreak INTEGER NOT NULL,
+                session INTEGER NOT NULL
+            )
+        """.trimIndent()
+        
+        val CREATE_SETTINGS_TABLE = """
+            CREATE TABLE $TABLE_SETTINGS (
+                $KEY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $KEY_USER_ID INTEGER UNIQUE NOT NULL,
+                studyTime INTEGER,
+                shortBreak INTEGER,
+                longBreak INTEGER,
+                sessionsBeforeLongBreak INTEGER,
+                FOREIGN KEY($KEY_USER_ID) REFERENCES $TABLE_USERS($KEY_ID)
+            )
+        """.trimIndent()
+        
+        val CREATE_TIME_RECORDS_TABLE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_TIME_RECORDS (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tag_id INTEGER NOT NULL,
+                studyTime REAL NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY(tag_id) REFERENCES $TABLE_TAGS($KEY_ID)
+            )
+        """.trimIndent()
+        
+        db?.execSQL(CREATE_FOCUS_TIMERS_TABLE)
+        db?.execSQL(CREATE_SETTINGS_TABLE)
+        db?.execSQL(CREATE_TIME_RECORDS_TABLE)
     }
 
     // --- 데이터 조작 함수 (CRUD) ---
@@ -306,7 +337,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put("tag_id", tagId)
-            put("study_time", time)
+            put("studyTime", time)
             put("date", date)
         }
         return db.insert("time_records", null, values)
@@ -341,7 +372,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         var index = 0f
         if (cursor.moveToFirst()) {
             do {
-                val timeIndex = cursor.getColumnIndex("study_time")
+                val timeIndex = cursor.getColumnIndex("studyTime")
                 if (timeIndex != -1) {
                     val time = cursor.getFloat(timeIndex)
                     timeList.add(Pair(index, time))
@@ -398,7 +429,95 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
     }
 
+    // 타이머 설정 저장
+    fun saveTimerSettings(studyTime: Int, shortBreak: Int, longBreak: Int, session: Int): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("studyTime", studyTime)
+            put("shortBreak", shortBreak)
+            put("longBreak", longBreak)
+            put("session", session)
+        }
+        return db.insert(TABLE_FOCUS_TIMERS, null, values)
+    }
 
+    // 타이머 설정 업데이트
+    fun updateTimerSettings(id: Long, studyTime: Int, shortBreak: Int, longBreak: Int, session: Int): Int {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("studyTime", studyTime)
+            put("shortBreak", shortBreak)
+            put("longBreak", longBreak)
+            put("session", session)
+        }
+        return db.update(TABLE_FOCUS_TIMERS, values, "$KEY_ID = ?", arrayOf(id.toString()))
+    }
+
+    // 타이머 설정 조회 (가장 최근 설정)
+    fun getLatestTimerSettings(): FocusTimer? {
+        val db = this.readableDatabase
+        val cursor = db.query(
+            TABLE_FOCUS_TIMERS,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "$KEY_ID DESC",
+            "1"
+        )
+
+        return if (cursor.moveToFirst()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID))
+            val studyTime = cursor.getInt(cursor.getColumnIndexOrThrow("studyTime"))
+            val shortBreak = cursor.getInt(cursor.getColumnIndexOrThrow("shortBreak"))
+            val longBreak = cursor.getInt(cursor.getColumnIndexOrThrow("longBreak"))
+            val session = cursor.getInt(cursor.getColumnIndexOrThrow("session"))
+            cursor.close()
+            FocusTimer(id, studyTime, shortBreak, longBreak, session)
+        } else {
+            cursor.close()
+            null
+        }
+    }
+
+    // 타이머 설정 조회 (기본값 반환)
+    fun getDefaultTimerSettings(): FocusTimer {
+        val settings = getLatestTimerSettings()
+        return settings ?: FocusTimer(0, 25, 5, 15, 8) // 기본값: 25분, 5분, 15분, 8세션
+    }
+
+    // 모든 타이머 설정 조회
+    fun getAllTimerSettings(): List<FocusTimer> {
+        val settingsList = mutableListOf<FocusTimer>()
+        val db = this.readableDatabase
+        val cursor = db.query(
+            TABLE_FOCUS_TIMERS,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "$KEY_ID DESC"
+        )
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID))
+            val studyTime = cursor.getInt(cursor.getColumnIndexOrThrow("studyTime"))
+            val shortBreak = cursor.getInt(cursor.getColumnIndexOrThrow("shortBreak"))
+            val longBreak = cursor.getInt(cursor.getColumnIndexOrThrow("longBreak"))
+            val session = cursor.getInt(cursor.getColumnIndexOrThrow("session"))
+            settingsList.add(FocusTimer(id, studyTime, shortBreak, longBreak, session))
+        }
+        cursor.close()
+        return settingsList
+    }
+
+    // 타이머 설정 삭제
+    fun deleteTimerSettings(id: Long): Int {
+        val db = this.writableDatabase
+        return db.delete(TABLE_FOCUS_TIMERS, "$KEY_ID = ?", arrayOf(id.toString()))
+    }
 
 
 }

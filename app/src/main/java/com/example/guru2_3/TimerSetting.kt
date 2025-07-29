@@ -23,10 +23,12 @@ class TimerSetting : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_timer_setting)
 
-        studyTime = intent.getIntExtra("집중시간", 25)
-        shortBreak = intent.getIntExtra("짧은휴식", 5)
-        longBreak = intent.getIntExtra("긴휴식", 15)
-        session = intent.getIntExtra("세션수", 8)
+        // 데이터베이스에서 저장된 설정 불러오기
+        val savedSettings = dbHelper.getDefaultTimerSettings()
+        studyTime = savedSettings.studyTime
+        shortBreak = savedSettings.shortBreak
+        longBreak = savedSettings.longBreak
+        session = savedSettings.session
 
         // 상태바 색 변경 코드 추가
         // window.statusBarColor = ContextCompat.getColor(this, R.color.mainRed)
@@ -64,6 +66,11 @@ class TimerSetting : AppCompatActivity() {
                 Toast.makeText(this, "세션: 1~10 사이 숫자만 입력 가능해요", Toast.LENGTH_SHORT).show()
                 sessionEt.setText("8") // 기존 값으로 복구
             } else {
+                // 데이터베이스에 타이머 설정 저장
+                val result = dbHelper.saveTimerSettings(studyTime, shortBreak, longBreak, session)
+                
+                Toast.makeText(this, "타이머 설정이 저장되었습니다!", Toast.LENGTH_SHORT).show()
+                
                 val intent = Intent(this, MainActivity::class.java)
                 intent.putExtra("집중시간", studyTime)
                 intent.putExtra("짧은휴식", shortBreak)
