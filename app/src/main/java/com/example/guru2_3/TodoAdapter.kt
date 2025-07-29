@@ -39,5 +39,11 @@ class TodoAdapter(
         items.add(todo)
         notifyItemInserted(items.size - 1)
     }
+
+    fun setItems(newItems: List<TodoItem>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
+    }
 }
 

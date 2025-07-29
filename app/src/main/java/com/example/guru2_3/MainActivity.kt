@@ -12,6 +12,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CalendarView
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -32,6 +33,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import java.util.Timer
 import kotlin.concurrent.timer
 
@@ -49,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private var isTimeSet = false
     private var isBreak = false
     private var userId: Long = 0
+    private var selectedDate: String =""
     //투두리스트 변수
 
     lateinit var  minTextView : TextView
@@ -62,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var  recyclerView: RecyclerView
     lateinit var spinner: Spinner
     lateinit var spinnerAdapter: ArrayAdapter<String>
+    //lateinit var calendarView : CalendarView
 
 
     private lateinit var dbHelper: DatabaseHelper
@@ -84,6 +90,7 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("MainActivity", "studyTime: $studyTime, shortBreak: $shortBreak, longBreak: $longBreak, session: $session")
 
+
         // 상태바 색 변경 코드 추가
         // window.statusBarColor = ContextCompat.getColor(this, R.color.mainRed)
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR  // 상태바 아이콘을 검정색으로
@@ -104,6 +111,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         spinner = findViewById(R.id.spinner)
 
+
         todoAdapter = TodoAdapter(mutableListOf())
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -114,23 +122,27 @@ class MainActivity : AppCompatActivity() {
         val dividerItemDecoration = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
 
+        //태그
         spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, mutableListOf())
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = spinnerAdapter
 
-
         val tagPairs = dbHelper.getAllTags(userId)  // List<Pair<Long, String>>
         val tagNames = tagPairs.map { it.second }   // List<String>
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tagNames)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
+        spinnerAdapter.clear()
+        spinnerAdapter.addAll(tagNames)
+        spinnerAdapter.notifyDataSetChanged()
+
+        //캘린더
+//        val calendar = Calendar.getInstance()
+//        selectedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
 
 
         listBtn.setOnClickListener {
             val text = todoListEdt.text.toString()
             val selectedTag = spinner.selectedItem as? String ?: "태그 없음"
             if (text.isNotBlank()) {
-                todoAdapter.addItem(TodoItem(text, selectedTag))
+                todoAdapter.addItem(TodoItem(text, selectedTag,selectedDate))
                 todoListEdt.text.clear()
             } else {
                 Toast.makeText(this, "할 일을 입력하세요", Toast.LENGTH_SHORT).show()
@@ -165,6 +177,11 @@ class MainActivity : AppCompatActivity() {
         resetButton.setOnClickListener {
             reset()
         }
+
+        // 날짜 선택 리스너
+        //calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+
+        //}
 
 //        // --- 여기에 DatabaseHelper 관련 코드 추가 ---
 //        // 1. DatabaseHelper 인스턴스 생성
@@ -301,5 +318,7 @@ class MainActivity : AppCompatActivity() {
         spinnerAdapter.addAll(existingTags.map { it.second }) // 태그 이름만 추출해서 추가
         spinnerAdapter.notifyDataSetChanged()
     }
+
+
 
 }
