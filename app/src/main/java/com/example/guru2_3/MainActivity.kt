@@ -291,6 +291,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         loadExistingTags()  // ← 태그 목록 다시 불러옴 (DB에서)
+
     }
 
     private fun loadExistingTags() {
