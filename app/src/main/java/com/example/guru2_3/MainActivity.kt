@@ -69,6 +69,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var spinnerAdapter: ArrayAdapter<String>
     lateinit var selectedDateText: TextView
     
+    // 태그 관련 변수 (스피너 클릭 이벤트에서 사용)
+    private var tagPairs: List<Pair<Long, String>> = emptyList()
+    
     // 진행 상황 표시 관련 변수
     lateinit var progressStatusText: TextView
     //lateinit var calendarView : CalendarView
@@ -198,11 +201,13 @@ class MainActivity : AppCompatActivity() {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = spinnerAdapter
 
-        val tagPairs = dbHelper.getAllTags(userId)  // List<Pair<Long, String>>
+        tagPairs = dbHelper.getAllTags(userId)  // List<Pair<Long, String>>
         val tagNames = tagPairs.map { it.second }   // List<String>
         spinnerAdapter.clear()
         spinnerAdapter.addAll(tagNames)
         spinnerAdapter.notifyDataSetChanged()
+
+
 
         //캘린더
 //        val calendar = Calendar.getInstance()
@@ -214,8 +219,7 @@ class MainActivity : AppCompatActivity() {
             if (text.isNotBlank()) {
                 // 날짜 선택 다이얼로그 표시
                 showDatePickerDialog { selectedDateForTask ->
-                    // 태그 ID 찾기
-                    val tagPairs = dbHelper.getAllTags(userId)
+                    // 태그 ID 찾기 (멤버 변수 사용)
                     val selectedTagPair = tagPairs.find { it.second == selectedTag }
                     val tagId = selectedTagPair?.first ?: 1L
                     
@@ -436,12 +440,24 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    /**
+     * 기존 태그들을 데이터베이스에서 로드하여 스피너에 표시하는 함수
+     * 
+     * 동작 과정:
+     * 1. 데이터베이스에서 현재 사용자의 모든 태그 조회
+     * 2. tagPairs 멤버 변수 업데이트 (스피너 클릭 이벤트에서 사용)
+     * 3. 스피너 어댑터에 태그 이름들만 추가하여 UI 갱신
+     * 
+     * 호출 시점:
+     * - onResume(): 다른 화면에서 돌아올 때
+     * - 태그가 추가/수정/삭제된 후
+     */
     private fun loadExistingTags() {
-        val existingTags = dbHelper.getAllTags(userId)
+        tagPairs = dbHelper.getAllTags(userId) // 멤버 변수 업데이트
 
         // Spinner에 연결된 어댑터 갱신
         spinnerAdapter.clear()
-        spinnerAdapter.addAll(existingTags.map { it.second }) // 태그 이름만 추출해서 추가
+        spinnerAdapter.addAll(tagPairs.map { it.second }) // 태그 이름만 추출해서 추가
         spinnerAdapter.notifyDataSetChanged()
     }
 

@@ -8,7 +8,21 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     data class User(val id: Long, val email: String, val nickname: String)
     data class Tag(val id: Long, val userId: Long, val tag_name: String)
-    data class Task(val id: Long, val tagId: Long, val title: String, val isCompleted: Boolean)
+    /**
+ * 태스크(할 일) 정보를 담는 데이터 클래스 (scheduledDate 필드 추가)
+ * 
+ * @param id 태스크 고유 ID (데이터베이스 자동 생성)
+ * @param tagId 소속 태그 ID (외래키)
+ * @param title 태스크 제목/내용
+ * @param scheduledDate 계획된 수행 날짜 (yyyy-MM-dd 형태, nullable)
+ * @param isCompleted 완료 여부 (true: 완료, false: 미완료)
+ * 
+ * 개선 사항:
+ * - scheduledDate 필드 추가로 태스크별 계획 날짜 관리 가능
+ * - 캘린더 기능과 연동하여 날짜별 태스크 조회 지원
+ * - TagInfoActivity에서 계획 날짜 표시 가능
+ */
+data class Task(val id: Long, val tagId: Long, val title: String, val scheduledDate: String?, val isCompleted: Boolean)
     data class FocusTimer(
         val id: Long, 
         val studyTime: Int, 
@@ -262,6 +276,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 val idIndex = cursor.getColumnIndex(KEY_ID)
                 val tagIdIndex = cursor.getColumnIndex(KEY_TAG_ID)
                 val titleIndex = cursor.getColumnIndex("title")
+                val scheduledDateIndex = cursor.getColumnIndex("scheduled_date")
                 val isCompletedIndex = cursor.getColumnIndex("is_completed")
 
                 if (idIndex != -1 && titleIndex != -1) {
@@ -269,6 +284,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                         id = cursor.getLong(idIndex),
                         tagId = cursor.getLong(tagIdIndex),
                         title = cursor.getString(titleIndex),
+                        scheduledDate = if (scheduledDateIndex != -1) cursor.getString(scheduledDateIndex) else null,
                         isCompleted = cursor.getInt(isCompletedIndex) == 1
                     ))
                 }
@@ -577,8 +593,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID))
             val tagId = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_TAG_ID))
             val title = cursor.getString(cursor.getColumnIndexOrThrow("title"))
+            val scheduledDate = cursor.getString(cursor.getColumnIndexOrThrow("scheduled_date"))
             val isCompleted = cursor.getInt(cursor.getColumnIndexOrThrow("is_completed")) == 1
-            tasks.add(Task(id, tagId, title, isCompleted))
+            tasks.add(Task(id, tagId, title, scheduledDate, isCompleted))
         }
         cursor.close()
         return tasks

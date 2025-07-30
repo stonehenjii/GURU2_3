@@ -32,16 +32,15 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
 
     private lateinit var scoreChart: LineChart
     private lateinit var timeChart: LineChart
-    //private lateinit var createTagNameEditText: EditText
     private lateinit var createTagFinishRate: TextView
     private lateinit var createTagDdayText: TextView
-    private lateinit var createTagDateText: TextView
+    private lateinit var dateSettingButton: android.widget.Button
+    private lateinit var taskRecyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var tagMoveicon: ImageView
     private lateinit var tagMoveText: TextView
     private lateinit var scoreInput: EditText
     private lateinit var createTagNameTextView: TextView
     private var tagName: String = ""
-    private lateinit var createTagDateSwitch: Switch
     private var examDate: String? = null
 
     // 데이터 저장용 리스트
@@ -54,30 +53,67 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_tag_info)
+        
+        try {
+            setContentView(R.layout.activity_tag_info)
 
-        tagName = intent.getStringExtra("TAG_NAME") ?: "기본태그"
-        currentTagId = intent.getLongExtra("TAG_ID", -1)
+            tagName = intent.getStringExtra("TAG_NAME") ?: "기본태그"
+            currentTagId = intent.getLongExtra("TAG_ID", -1)
+            
+            // 디버깅 로그
+            Toast.makeText(this, "TagInfoActivity 시작: $tagName (ID: $currentTagId)", Toast.LENGTH_SHORT).show()
+            
+            // 태그 ID 검증
+            if (currentTagId == -1L) {
+                Toast.makeText(this, "올바르지 않은 태그 정보입니다.", Toast.LENGTH_SHORT).show()
+                finish()
+                return
+            }
 
-        initViews()
-        setupTagName()
-        setupCharts()
-        setClickListeners()
-        dbHelper = DatabaseHelper(this)
-        loadDataFromDatabase()
+            dbHelper = DatabaseHelper(this) // initViews 전에 dbHelper 초기화
+            
+            initViews()
+            setupTagName()
+            setupCharts()
+            setClickListeners()
+            
+            // 데이터 로딩을 개별적으로 try-catch로 감싸기
+            try {
+                loadDataFromDatabase()
+            } catch (e: Exception) {
+                Toast.makeText(this, "데이터 로딩 중 오류: ${e.message}", Toast.LENGTH_LONG).show()
+                // 기본 UI는 유지
+                updateCompletionRate()
+                updateDdayDisplay()
+            }
+            
+            Toast.makeText(this, "TagInfoActivity 초기화 완료", Toast.LENGTH_SHORT).show()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "TagInfoActivity 오류: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
+    /**
+     * UI 뷰들을 초기화하는 함수 (오류 처리 추가)
+     */
     private fun initViews() {
-        scoreChart = findViewById(R.id.scoreChart)
-        timeChart = findViewById(R.id.timeChart)
-        createTagNameTextView = findViewById(R.id.createTagNameTextView)
-        createTagFinishRate = findViewById(R.id.createTagFinishRate)
-        createTagDdayText = findViewById(R.id.createTagDdayText)
-        createTagDateText = findViewById(R.id.createTagDateText)
-        scoreInput = findViewById(R.id.scoreInput)
-        tagMoveicon = findViewById(R.id.tagMoveicon)
-        tagMoveText = findViewById(R.id.tagMoveText)
-        createTagDateSwitch = findViewById(R.id.createTagDateSwitch)
+        try {
+            scoreChart = findViewById(R.id.scoreChart)
+            timeChart = findViewById(R.id.timeChart)
+            createTagNameTextView = findViewById(R.id.createTagNameTextView)
+            createTagFinishRate = findViewById(R.id.createTagFinishRate)
+            createTagDdayText = findViewById(R.id.createTagDdayText)
+            dateSettingButton = findViewById(R.id.dateSettingButton)
+            taskRecyclerView = findViewById(R.id.taskRecyclerView)
+            scoreInput = findViewById(R.id.scoreInput)
+            tagMoveicon = findViewById(R.id.tagMoveicon)
+            tagMoveText = findViewById(R.id.tagMoveText)
+        } catch (e: Exception) {
+            Toast.makeText(this, "UI 초기화 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun setupTagName() {
@@ -422,51 +458,171 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         // 선택이 해제되었을 때의 동작
     }
 
+    /**
+     * 데이터베이스에서 태그 관련 데이터를 로드하는 함수 (오류 처리 개선)
+     * 
+     * 로드하는 데이터:
+     * - 성적 그래프 데이터
+     * - 시간 그래프 데이터
+     * - 시험 날짜 정보
+     * - 완수율 정보
+     * - D-day 정보
+     * - 태스크 목록
+     * 
+     * 오류 처리:
+     * - 각 단계별 try-catch로 오류 격리
+     * - 사용자에게 오류 메시지 표시
+     */
     private fun loadDataFromDatabase() {
-        val scoreData = dbHelper.getScoreData(currentTagId) // ← TAG별 불러오기
-        scoreEntries.clear()
-        scoreData.forEach { (index, score) ->
-            scoreEntries.add(Entry(index, score))
-        }
-        currentScoreIndex = scoreData.size.toFloat()
-        updateScoreChart()
+        try {
+            // 성적 데이터 로드
+            val scoreData = dbHelper.getScoreData(currentTagId)
+            scoreEntries.clear()
+            scoreData.forEach { (index, score) ->
+                scoreEntries.add(Entry(index, score))
+            }
+            currentScoreIndex = scoreData.size.toFloat()
+            updateScoreChart()
 
-        val timeData = dbHelper.getTimeData(currentTagId) // ← TAG별 불러오기
-        timeEntries.clear()
-        timeData.forEach { (index, time) ->
-            timeEntries.add(Entry(index, time))
+            // 시간 데이터 로드
+            val timeData = dbHelper.getTimeData(currentTagId)
+            timeEntries.clear()
+            timeData.forEach { (index, time) ->
+                timeEntries.add(Entry(index, time))
+            }
+            currentTimeIndex = timeData.size.toFloat()
+            updateTimeChart()
+            
+            // 기타 데이터 로드
+            loadExamDateFromDatabase()
+            setupDateButton()
+            
+            // 태스크 RecyclerView 설정을 개별적으로 try-catch로 감싸기
+            try {
+                setupTaskRecyclerView()
+            } catch (e: Exception) {
+                Toast.makeText(this, "태스크 목록 설정 중 오류: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+            
+            updateCompletionRate()
+            updateDdayDisplay()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "데이터 로딩 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+            // 기본값으로 초기화
+            scoreEntries.clear()
+            timeEntries.clear()
+            updateScoreChart()
+            updateTimeChart()
         }
-        currentTimeIndex = timeData.size.toFloat()
-        updateTimeChart()
-        loadExamDateFromDatabase()
-        setupDateSwitch()
-        updateCompletionRate() // 태그 데이터 로드 완료 후 완수율 계산 및 표시
-        updateDdayDisplay()    // 태그 데이터 로드 완료 후 D-day 계산 및 표시
     }
 
 
 
-    private fun setupDateSwitch() {
-        createTagDateSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                createTagDateText.visibility = View.VISIBLE
-                if (examDate == null) {
-                    showDatePicker()
-                } else {
-                    updateDateTextWithDDay() // 기존 날짜가 있으면 D-day와 함께 표시
-                }
-            } else {
-                createTagDateText.visibility = View.GONE
-                examDate = null
-                dbHelper.updateExamDate(currentTagId, null)
-                createTagDateText.text = "날짜를 선택하세요"
-            }
+    /**
+     * 날짜 설정 버튼 클릭 리스너를 설정하는 함수 (UI 개선 버전)
+     * 
+     * 기존 UI 개선 사항:
+     * - 기존: Switch 토글로 날짜 설정 활성화/비활성화
+     * - 개선: 명확한 "날짜 설정" 버튼으로 즉시 DatePicker 호출
+     * 
+     * 사용자 경험 개선:
+     * - 더 직관적인 인터페이스 (버튼 클릭 → 즉시 날짜 선택)
+     * - D-day 옆에 위치하여 관련성 명확
+     * - 별도의 토글 단계 없이 바로 날짜 설정 가능
+     */
+    private fun setupDateButton() {
+        dateSettingButton.setOnClickListener {
+            showDatePicker()
         }
+    }
 
-        createTagDateText.setOnClickListener {
-            if (createTagDateSwitch.isChecked) {
-                showDatePicker()
+    /**
+     * 태스크 목록을 표시하는 RecyclerView를 설정하는 함수 (새로운 기능)
+     * 
+     * 기능 설명:
+     * - 현재 태그에 속한 모든 태스크를 리스트로 표시
+     * - 각 태스크의 계획 날짜와 완료 상태를 한 눈에 확인 가능
+     * - 체크박스를 통해 실시간으로 완료 상태 토글 가능
+     * 
+     * UI 구성:
+     * - LinearLayoutManager로 세로 리스트 형태
+     * - 각 항목: "태스크명 (계획일: yyyy-MM-dd)" + 체크박스
+     * - 150dp 고정 높이로 스크롤 가능
+     * 
+     * 데이터 연동:
+     * - loadTasksForTag()에서 데이터베이스 조회 및 어댑터 설정
+     * - 체크박스 변경 시 DB 업데이트 및 완수율 새로고침
+     */
+    private fun setupTaskRecyclerView() {
+        // RecyclerView 설정 (태스크 목록 표시용)
+        taskRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        
+        // 태스크 목록을 로드하여 표시
+        loadTasksForTag()
+    }
+
+    /**
+     * 현재 태그의 모든 태스크를 로드하여 RecyclerView에 표시하는 함수
+     * 
+     * 개선 사항:
+     * - null 체크 강화
+     * - 예외 처리 추가
+     * - 올바른 레이아웃 사용
+     * - 안전한 데이터 접근
+     */
+    private fun loadTasksForTag() {
+        try {
+            val tasks = dbHelper.getTasksForTag(currentTagId)
+            
+            // 간단한 텍스트 어댑터 생성 (개선된 버전)
+            val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+                
+                inner class TaskViewHolder(itemView: android.view.View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
+                    val taskText: TextView = itemView.findViewById(R.id.textView)
+                    val checkBox: android.widget.CheckBox = itemView.findViewById(R.id.checkBox)
+                }
+                
+                override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+                    val view = android.view.LayoutInflater.from(parent.context)
+                        .inflate(R.layout.item_todo, parent, false)
+                    return TaskViewHolder(view)
+                }
+                
+                override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+                    try {
+                        val task = tasks.getOrNull(position) ?: return
+                        val taskHolder = holder as TaskViewHolder
+                        
+                        // null-safe한 데이터 접근
+                        val taskTitle = task.title
+                        val scheduledDateText = task.scheduledDate ?: "미설정"
+                        val isCompleted = task.isCompleted
+                        
+                        taskHolder.taskText.text = "$taskTitle (계획일: $scheduledDateText)"
+                        taskHolder.checkBox.isChecked = isCompleted
+                        
+                        // 체크박스 리스너 설정 (null 체크 포함)
+                        taskHolder.checkBox.setOnCheckedChangeListener { _, isChecked ->
+                            try {
+                                dbHelper.updateTaskCompletion(task.id, isChecked)
+                                updateCompletionRate()
+                            } catch (e: Exception) {
+                                Toast.makeText(this@TagInfoActivity, "태스크 상태 업데이트 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@TagInfoActivity, "태스크 표시 중 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                
+                override fun getItemCount(): Int = tasks.size
             }
+            
+            taskRecyclerView.adapter = adapter
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "태스크 목록 로딩 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -480,8 +636,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
                 examDate = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
-                updateDateTextWithDDay()  // 기존 숨겨진 텍스트 업데이트
-                updateDdayDisplay()       // 완수율 아래 D-day 표시 업데이트
+                updateDdayDisplay()       // D-day 표시 업데이트
                 dbHelper.updateExamDate(currentTagId, examDate)
             },
             year, month, day
@@ -492,12 +647,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
 
     private fun loadExamDateFromDatabase() {
         examDate = dbHelper.getExamDate(currentTagId)
-        if (examDate != null) {
-            createTagDateSwitch.isChecked = true
-            createTagDateText.visibility = View.VISIBLE
-            createTagDateText.text = examDate
-            updateDateTextWithDDay()
-        }
+        // D-day 표시는 updateDdayDisplay()에서 처리됨
     }
 
     /**
@@ -601,33 +751,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         updateDdayDisplay()    // 화면으로 돌아올 때마다 D-day 업데이트
     }
 
-    private fun updateDateTextWithDDay() {
-        examDate?.let { dateString ->
-            try {
-                // Calendar를 사용한 D-day 계산
-                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                val examDateParsed = dateFormat.parse(dateString)
-                val today = java.util.Calendar.getInstance().time
 
-                if (examDateParsed != null) {
-                    val timeDiff = examDateParsed.time - today.time
-                    val daysUntilExam = (timeDiff / (1000 * 60 * 60 * 24)).toInt()
-
-                    val displayText = when {
-                        daysUntilExam > 0 -> "$dateString (D-${daysUntilExam})"
-                        daysUntilExam == 0 -> "$dateString (D-Day!)"
-                        else -> "$dateString (D+${-daysUntilExam})"
-                    }
-
-                    createTagDateText.text = displayText
-                } else {
-                    createTagDateText.text = dateString
-                }
-            } catch (e: Exception) {
-                createTagDateText.text = dateString
-            }
-        }
-    }
 
 
 
