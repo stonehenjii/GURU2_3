@@ -113,8 +113,8 @@ class LoginActivity : AppCompatActivity() {
         startActivity(intent)
     }
     private fun movetotimer(userId: Long) {
-        // 타이머 화면으로 이동(현재는 임시로 tagactivity 화면으로 이동합니다)
-        val intent = Intent(this, TagActivity::class.java)
+        // 타이머 화면으로 이동
+        val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("USER_ID", userId)
         startActivity(intent)
         finish()

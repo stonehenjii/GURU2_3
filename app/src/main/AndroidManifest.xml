@@ -16,12 +16,12 @@
         <activity
             android:name=".TagInfoActivity"
             android:exported="false" />
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
 <!--        <activity-->
 <!--            android:name=".TestActivity"-->
 <!--            android:exported="false" />-->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
@@ -32,7 +32,7 @@
             android:name=".TimerSetting"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
