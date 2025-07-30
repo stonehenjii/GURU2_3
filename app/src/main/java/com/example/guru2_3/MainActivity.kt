@@ -68,6 +68,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var spinner: Spinner
     lateinit var spinnerAdapter: ArrayAdapter<String>
     lateinit var selectedDateText: TextView
+    
+    // 진행 상황 표시 관련 변수
+    lateinit var progressStatusText: TextView
     //lateinit var calendarView : CalendarView
 
     // 캘린더 관련 변수들
@@ -128,6 +131,9 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         spinner = findViewById(R.id.spinner)
         selectedDateText = findViewById(R.id.selectedDateText)
+        
+        // 진행 상황 표시 관련 초기화
+        progressStatusText = findViewById(R.id.progressStatusText)
 
 
         /**
@@ -248,8 +254,10 @@ class MainActivity : AppCompatActivity() {
             setButton.visibility = View.GONE
             resetButton.visibility = View.GONE
             pauseButton.visibility = View.VISIBLE
+            
+            // 타이머 시작 시 진행 상황 업데이트
+            updateProgressDisplay()
             start()
-
         }
 
         pauseButton.setOnClickListener {
@@ -267,6 +275,9 @@ class MainActivity : AppCompatActivity() {
         //calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
 
         //}
+        
+        // 초기 진행 상황 표시 설정
+        updateProgressDisplay()
 
 //        // --- 여기에 DatabaseHelper 관련 코드 추가 ---
 //        // 1. DatabaseHelper 인스턴스 생성
@@ -337,7 +348,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (!isBreak) {
-                    sessionCount = 0
+                    // 세션 완료 후 sessionCount 증가
                     sessionCount++
                     if (sessionCount  >= session) {
                         time = longBreak * 60 * 100
@@ -352,11 +363,17 @@ class MainActivity : AppCompatActivity() {
                             
                             // 타이머 완료 시 데이터베이스에 기록 저장
                             dbHelper.saveTimerSettings(studyTime, shortBreak, longBreak, session)
+                            updateProgressDisplay() // 완료 상태 표시
                         }
                     } else {
                         time = studyTime * 60 * 100
                         isBreak = false
                     }
+                }
+                
+                // 세션/휴식 변경 시 진행 상황 업데이트
+                runOnUiThread {
+                    updateProgressDisplay()
                 }
 
                 // 👉 사용자가 다시 재생 버튼 누를 때까지 기다리기
@@ -386,8 +403,30 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             minTextView.text = String.format("%02d", min)
             secTextView.text = String.format("%02d", sec)
+            updateProgressDisplay() // 진행 상황 표시 업데이트
         }
+    }
 
+    /**
+     * 현재 진행 상황만 간단하게 표시하는 함수
+     * 
+     * 표시 형식:
+     * - 세션 중: "2/3"
+     * - 짧은 휴식: "세션2 마무리 후 짧은휴식"
+     * - 긴 휴식: "전체 세션 마무리 후 긴휴식"
+     * - 완료: "🎉 모든 세션 완료!"
+     */
+    private fun updateProgressDisplay() {
+        val currentStatus = when {
+            sessionCount == 0 && !isBreak -> "1/$session"
+            sessionCount >= session && isBreak -> "전체 세션 마무리 후 긴휴식"
+            sessionCount >= session -> "🎉 모든 세션 완료!"
+            isBreak && sessionCount > 0 -> "세션${sessionCount} 마무리 후 짧은휴식"
+            !isBreak && sessionCount > 0 -> "${sessionCount + 1}/$session"
+            else -> "1/$session"
+        }
+        
+        progressStatusText.text = currentStatus
     }
 
     override fun onResume() {

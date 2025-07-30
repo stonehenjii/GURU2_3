@@ -316,6 +316,20 @@
         app:layout_constraintTop_toBottomOf="@+id/calendarContainer"
         app:layout_constraintVertical_bias="0.041" />
 
+    <!-- 현재 진행 상황만 표시 -->
+    <TextView
+        android:id="@+id/progressStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="1/3 세션 시작 준비"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/minTextView" />
+
     <ImageButton
         android:id="@+id/setButton"
         android:layout_width="wrap_content"
