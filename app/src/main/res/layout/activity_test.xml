@@ -300,28 +300,46 @@
         app:layout_constraintStart_toEndOf="@+id/minTextView" />
 
 
+    <!-- 현재 진행 상황만 표시 -->
+
     <TextView
         android:id="@+id/minTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="5dp"
         android:layout_marginBottom="10dp"
         android:text="00"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         android:textSize="48sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.369"
+        app:layout_constraintHorizontal_bias="0.364"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/calendarContainer"
-        app:layout_constraintVertical_bias="0.041" />
+        app:layout_constraintVertical_bias="0.0" />
 
-    <!-- 현재 진행 상황만 표시 -->
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+
+        android:text=":"
+        android:textColor="@color/black"
+        android:textSize="48sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.483"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.144" />
+
     <TextView
         android:id="@+id/progressStatusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="5dp"
         android:text="1/3 세션 시작 준비"
         android:textColor="@color/black"
         android:textSize="16sp"
@@ -335,13 +353,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="50dp"
-        android:layout_marginBottom="404dp"
+        android:layout_marginBottom="440dp"
         android:backgroundTint="@color/white"
         android:padding="1dp"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.458"
         app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@android:drawable/ic_media_play"
         app:tint="@color/red" />
@@ -350,64 +368,68 @@
         android:id="@+id/resetButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
+        android:layout_marginTop="2dp"
         android:backgroundTint="@color/white"
         android:padding="1dp"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.116"
+        app:layout_constraintHorizontal_bias="0.205"
         app:layout_constraintStart_toEndOf="@+id/setButton"
         app:layout_constraintTop_toBottomOf="@+id/secTextView"
-        app:layout_constraintVertical_bias="0.012"
+        app:layout_constraintVertical_bias="0.067"
         app:srcCompat="@android:drawable/ic_menu_rotate"
-        app:tint="@color/red" />
-
-    <ImageButton
-        android:id="@+id/pauseButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="556dp"
-        android:backgroundTint="@color/white"
-        android:padding="1dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.488"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/minTextView"
-        app:srcCompat="@android:drawable/ic_media_pause"
         app:tint="@color/red" />
 
 
     <!-- 선택된 날짜 표시 -->
 
+    <ImageButton
+        android:id="@+id/pauseButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/white"
+        android:padding="1dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.353"
+        app:srcCompat="@android:drawable/ic_media_pause"
+        app:tint="@color/red" />
+
     <Spinner
         android:id="@+id/spinner"
-        android:layout_width="113dp"
-        android:layout_height="38dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="340dp"
+        android:layout_width="110dp"
+        android:layout_height="33dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="290dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="44dp"
         android:background="@drawable/edittext_rounded"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
+        app:layout_constraintEnd_toStartOf="@+id/listBtn"
         app:layout_constraintStart_toEndOf="@+id/todoListEdt"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.25" />
 
     <EditText
         android:id="@+id/todoListEdt"
         android:layout_width="189dp"
         android:layout_height="38dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="344dp"
+        android:layout_marginBottom="9dp"
         android:background="@drawable/edittext_rounded"
         android:hint="할 일 추가하기"
         android:inputType="text"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textSize="14sp"
-        app:layout_constraintBaseline_toBaselineOf="@+id/spinner"
+        app:layout_constraintBottom_toTopOf="@+id/selectedDateText"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/toolbar" />
 
     <TextView
         android:id="@+id/selectedDateText"
@@ -425,32 +447,34 @@
         android:id="@+id/listBtn"
         android:layout_width="66dp"
         android:layout_height="53dp"
-        android:layout_marginTop="264dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="230dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="34dp"
         android:backgroundTint="@color/white"
         android:padding="1dp"
         android:scaleType="centerInside"
+        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/spinner"
         app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/maintomato" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:layout_width="409dp"
-        android:layout_height="284dp"
+        android:layout_width="384dp"
+        android:layout_height="297dp"
         android:layout_margin="16dp"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="100dp"
         android:background="@drawable/recyclerview_rounded"
         android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.652"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/listBtn"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toBottomOf="@+id/selectedDateText" />
 
     <TextView
         android:id="@+id/textView7"
