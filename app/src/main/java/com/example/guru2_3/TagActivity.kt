@@ -32,6 +32,9 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.highlight.Highlight
 import android.view.MotionEvent
 import android.app.AlertDialog
+import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
+import android.text.TextWatcher
 
 class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
     private lateinit var scrollContainer: LinearLayout
@@ -46,6 +49,9 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
     private val timeEntriesMap = mutableMapOf<Long, MutableList<Entry>>()
     private val scoreIndexMap = mutableMapOf<Long, Float>()
     private val timeIndexMap = mutableMapOf<Long, Float>()
+    
+    // 캘린더 연동을 위한 태스크 상태 변경 플래그
+    private var hasTaskStatusChanged = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -134,10 +140,9 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         tagCounter++
         val tagName = "태그 이름 $tagCounter"
 
-        // 데이터베이스에 새 태그 생성
-        val tagId = dbHelper.createTag(tagName)
+        // 데이터베이스에 새 태그 생성 (중복 제거 - addTag만 사용)
+        val tagId = dbHelper.addTag(userId, tagName)
         val newTag = createTagView(tagName, tagId, isEditMode = false)
-        val tag = dbHelper.addTag(userId, tagName)
         scrollContainer.addView(newTag)
 
         Toast.makeText(this, "새 태그가 추가되었습니다!", Toast.LENGTH_SHORT).show()
@@ -206,6 +211,7 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         // 1. EditText 추가 (태그 이름)
         val nameEditText = EditText(this)
         nameEditText.setText(tagName)
+        nameEditText.tag = tagName // 현재 태그 이름을 tag 속성에 저장
         nameEditText.setTypeface(null, android.graphics.Typeface.BOLD)
         nameEditText.textSize = 18f
         nameEditText.setTextColor(Color.BLACK)
@@ -224,17 +230,57 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         )
         nameEditText.layoutParams = nameEditParams
 
-        // EditText 변경 감지 리스너
-        nameEditText.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                val newTagName = nameEditText.text.toString()
-                if (newTagName.isNotEmpty()) {
-                    dbHelper.updateTagName(tagId, newTagName)
+        // 2. 저장 버튼 추가 (텍스트 변경 감지 기능 포함)
+        val saveButton = android.widget.Button(this)
+        saveButton.text = "저장"
+        saveButton.textSize = 12f
+        saveButton.setBackgroundColor(Color.parseColor("#9E9E9E")) // 기본적으로 비활성화 색상
+        saveButton.setTextColor(Color.WHITE)
+        saveButton.isEnabled = false // 처음엔 비활성화
+        saveButton.setPadding(
+            (8 * dpToPx).toInt(),
+            (4 * dpToPx).toInt(),
+            (8 * dpToPx).toInt(),
+            (4 * dpToPx).toInt()
+        )
+        
+        val saveButtonParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            (40 * dpToPx).toInt()
+        )
+        saveButtonParams.setMargins((8 * dpToPx).toInt(), 0, (4 * dpToPx).toInt(), 0)
+        saveButton.layoutParams = saveButtonParams
+        
+        // EditText 텍스트 변경 감지 리스너
+        nameEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val currentText = s?.toString()?.trim() ?: ""
+                val originalText = nameEditText.tag as? String ?: ""
+                
+                // 텍스트가 변경되었고 비어있지 않으면 저장 버튼 활성화
+                if (currentText != originalText && currentText.isNotEmpty()) {
+                    saveButton.isEnabled = true
+                    saveButton.setBackgroundColor(Color.parseColor("#2196F3")) // 활성화 색상
+                } else {
+                    saveButton.isEnabled = false
+                    saveButton.setBackgroundColor(Color.parseColor("#9E9E9E")) // 비활성화 색상
                 }
             }
+        })
+        
+        // 저장 버튼 클릭 리스너
+        saveButton.setOnClickListener {
+            updateTagNameIfChanged(nameEditText, tagId)
+            // 저장 후 버튼 비활성화
+            saveButton.isEnabled = false
+            saveButton.setBackgroundColor(Color.parseColor("#9E9E9E"))
         }
 
-        // 2. 토글 삼각형 ImageView 추가
+        // 3. 토글 삼각형 ImageView 추가
         val toggleButton = ImageView(this)
         toggleButton.setImageResource(android.R.drawable.arrow_down_float) // 기본 하향 화살표
         toggleButton.scaleType = ImageView.ScaleType.CENTER_INSIDE
@@ -250,7 +296,7 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
             (40 * dpToPx).toInt(),
             (40 * dpToPx).toInt()
         )
-        toggleParams.setMargins((8 * dpToPx).toInt(), 0, 0, 0)
+        toggleParams.setMargins((4 * dpToPx).toInt(), 0, 0, 0)
         toggleButton.layoutParams = toggleParams
 
         // 3. D-day 텍스트
@@ -277,8 +323,9 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         finishRateParams.topMargin = (4 * dpToPx).toInt()
         finishRateText.layoutParams = finishRateParams
 
-        // 이름+토글 컨테이너에 뷰들 추가
+        // 이름+저장+토글 컨테이너에 뷰들 추가
         nameToggleContainer.addView(nameEditText)
+        nameToggleContainer.addView(saveButton)
         nameToggleContainer.addView(toggleButton)
 
         // 기본 정보 컨테이너에 뷰들 추가
@@ -503,8 +550,27 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
             }
         }
         
-        // 데이터 로드
+        // 데이터 로드 및 더미 데이터 설정
         loadScoreData(chart, tagId)
+    }
+    
+    /**
+     * 투명한 더미 성적 데이터 설정 (클릭 감지를 위해)
+     */
+    private fun setupDummyScoreData(chart: LineChart) {
+        val dummyEntries = listOf(Entry(0f, 50f)) // 중간값으로 설정
+        val dataSet = LineDataSet(dummyEntries, "").apply {
+            color = Color.TRANSPARENT // 투명하게 설정
+            setCircleColor(Color.TRANSPARENT)
+            setDrawValues(false)
+            setDrawCircles(false)
+            lineWidth = 0f
+            isHighlightEnabled = false
+        }
+        
+        val lineData = LineData(dataSet)
+        chart.data = lineData
+        chart.invalidate()
     }
     
     /**
@@ -557,8 +623,27 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
             }
         }
         
-        // 데이터 로드
+        // 데이터 로드 및 더미 데이터 설정
         loadTimeData(chart, tagId)
+    }
+    
+    /**
+     * 투명한 더미 시간 데이터 설정 (클릭 감지를 위해)
+     */
+    private fun setupDummyTimeData(chart: LineChart) {
+        val dummyEntries = listOf(Entry(0f, 150f)) // 중간값으로 설정 (150분)
+        val dataSet = LineDataSet(dummyEntries, "").apply {
+            color = Color.TRANSPARENT
+            setCircleColor(Color.TRANSPARENT)
+            setDrawValues(false)
+            setDrawCircles(false)
+            lineWidth = 0f
+            isHighlightEnabled = false
+        }
+        
+        val lineData = LineData(dataSet)
+        chart.data = lineData
+        chart.invalidate()
     }
     
     /**
@@ -575,7 +660,12 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         scoreEntriesMap[tagId] = entries
         scoreIndexMap[tagId] = scoreData.size.toFloat()
         
-        updateScoreChart(chart, entries)
+        if (entries.isEmpty()) {
+            // 데이터가 없으면 더미 데이터 설정 (클릭 감지용)
+            setupDummyScoreData(chart)
+        } else {
+            updateScoreChart(chart, entries)
+        }
     }
     
     /**
@@ -592,7 +682,12 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         timeEntriesMap[tagId] = entries
         timeIndexMap[tagId] = timeData.size.toFloat()
         
-        updateTimeChart(chart, entries)
+        if (entries.isEmpty()) {
+            // 데이터가 없으면 더미 데이터 설정 (클릭 감지용)
+            setupDummyTimeData(chart)
+        } else {
+            updateTimeChart(chart, entries)
+        }
     }
     
     /**
@@ -600,7 +695,7 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
      */
     private fun updateScoreChart(chart: LineChart, entries: List<Entry>) {
         if (entries.isEmpty()) {
-            chart.clear()
+            setupDummyScoreData(chart) // 빈 데이터일 때는 더미 데이터 유지
             return
         }
         
@@ -624,7 +719,7 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
      */
     private fun updateTimeChart(chart: LineChart, entries: List<Entry>) {
         if (entries.isEmpty()) {
-            chart.clear()
+            setupDummyTimeData(chart) // 빈 데이터일 때는 더미 데이터 유지
             return
         }
         
@@ -800,7 +895,7 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
      */
     override fun onResume() {
         super.onResume()
-        loadExistingTags()        // 최신 태그 목록 로드
+        // loadExistingTags() 제거 - UI 재생성으로 인한 데이터 손실 방지
         updateCompletionRates()   // 완수율 실시간 업데이트
         updateDdays()             // D-day 실시간 업데이트
         updateTaskLists()         // 태스크 목록 업데이트
@@ -1019,10 +1114,13 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
                             // 완수율 실시간 업데이트
                             updateCompletionRates()
                             
-                            // 성공 메시지 표시
+                            // 캘린더 연동을 위한 플래그 설정
+                            setTaskStatusChanged(true)
+                            
+                            // 성공 메시지 표시 (캘린더 연동 정보 포함)
                             val statusText = if (isChecked) "완료" else "미완료"
                             Toast.makeText(this@TagActivity, 
-                                "태스크 '${task.title}' $statusText", 
+                                "태스크 '${task.title}' $statusText - 캘린더에 반영됩니다", 
                                 Toast.LENGTH_SHORT).show()
                                 
                         } catch (e: Exception) {
@@ -1114,5 +1212,65 @@ class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
         )
         
         datePickerDialog.show()
+    }
+    
+    /**
+     * 태스크 상태 변경 플래그를 설정하는 함수
+     * 
+     * @param changed true이면 태스크 상태가 변경됨을 표시
+     */
+    private fun setTaskStatusChanged(changed: Boolean) {
+        hasTaskStatusChanged = changed
+    }
+    
+    /**
+     * 액티비티 종료 시 변경된 태스크 상태 정보를 MainActivity에 전달
+     */
+    override fun finish() {
+        if (hasTaskStatusChanged) {
+            // 태스크 상태가 변경된 경우 결과 코드를 RESULT_OK로 설정
+            setResult(RESULT_OK)
+        }
+        super.finish()
+    }
+    
+    /**
+     * 태그 이름이 변경되었는지 확인하고 업데이트하는 함수
+     * 
+     * @param nameEditText 태그 이름 EditText (tag 속성에 현재 태그 이름 저장됨)
+     * @param tagId 태그 ID
+     */
+    private fun updateTagNameIfChanged(nameEditText: EditText, tagId: Long) {
+        val newTagName = nameEditText.text.toString().trim()
+        val originalTagName = nameEditText.tag as? String ?: ""
+        
+        // 입력값 검증
+        if (newTagName.isEmpty()) {
+            nameEditText.setText(originalTagName) // 빈 값이면 원래 이름으로 복구
+            Toast.makeText(this, "태그 이름은 비워둘 수 없습니다", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // 변경되었는지 확인
+        if (newTagName != originalTagName) {
+            try {
+                val result = dbHelper.updateTagName(tagId, newTagName)
+                if (result > 0) {
+                    // 성공 시 tag 속성 업데이트
+                    nameEditText.tag = newTagName
+                    Toast.makeText(this, "태그 이름이 '$newTagName'으로 변경되었습니다", Toast.LENGTH_SHORT).show()
+                    
+                    // 키보드 숨기기
+                    val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.hideSoftInputFromWindow(nameEditText.windowToken, 0)
+                } else {
+                    nameEditText.setText(originalTagName) // 실패 시 원래 이름으로 복구
+                    Toast.makeText(this, "태그 이름 변경에 실패했습니다", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                nameEditText.setText(originalTagName) // 오류 시 원래 이름으로 복구
+                Toast.makeText(this, "오류가 발생했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

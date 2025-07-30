@@ -30,6 +30,9 @@ class TodoAdapter(
     private val onTaskStatusChanged: (() -> Unit)? = null
 ) : RecyclerView.Adapter<TodoAdapter.TodoViewHolder>() {
 
+    // 데이터 로딩 중인지 추적하는 플래그 (로딩 중에는 콜백 호출 안함)
+    private var isLoadingData = false
+
     inner class TodoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textView: TextView = itemView.findViewById(R.id.textView)
         val checkBox: CheckBox = itemView.findViewById(R.id.checkBox)
@@ -43,14 +46,14 @@ class TodoAdapter(
 
     override fun onBindViewHolder(holder: TodoViewHolder, position: Int) {
         val item = items[position]
-        // position은 0부터 시작하니까 +1 해서 1부터 시작하는 번호로 표시
+        
+        // 텍스트 설정
         holder.textView.text = "${position + 1}. ${item.tagName} : ${item.text}"
-        holder.checkBox.isChecked = item.isDone
-
-        // 체크박스 리스너 중복 호출 방지를 위해 일시적으로 제거
+        
+        // 체크박스 리스너 중복 호출 방지를 위해 먼저 제거
         holder.checkBox.setOnCheckedChangeListener(null)
         
-        // 현재 태스크의 완료 상태를 체크박스에 반영
+        // 현재 태스크의 완료 상태를 체크박스에 반영 (리스너 없는 상태에서)
         holder.checkBox.isChecked = item.isDone
         
         /**
@@ -67,14 +70,17 @@ class TodoAdapter(
          * - 완료된 태스크 체크 해제 시: 초록색 체크 → 빨간색 원
          */
         holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
-            // 1. 메모리의 TodoItem 상태 업데이트
-            item.isDone = isChecked
-            
-            // 2. 데이터베이스에 변경 사항 저장
-            dbHelper?.updateTaskCompletion(item.id, isChecked)
-            
-            // 3. 캘린더 새로고침을 위한 콜백 호출 (MainActivity.refreshCalendar())
-            onTaskStatusChanged?.invoke()
+            // 데이터 로딩 중이 아닌 경우에만 처리 (사용자가 직접 클릭한 경우)
+            if (!isLoadingData) {
+                // 1. 메모리의 TodoItem 상태 업데이트
+                item.isDone = isChecked
+                
+                // 2. 데이터베이스에 변경 사항 저장
+                dbHelper?.updateTaskCompletion(item.id, isChecked)
+                
+                // 3. 캘린더 새로고침을 위한 콜백 호출 (MainActivity.refreshCalendar())
+                onTaskStatusChanged?.invoke()
+            }
         }
     }
 
@@ -86,9 +92,15 @@ class TodoAdapter(
     }
 
     fun setItems(newItems: List<TodoItem>) {
+        // 데이터 로딩 시작을 표시 (체크박스 리스너 콜백 방지)
+        isLoadingData = true
+        
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
+        
+        // 데이터 로딩 완료를 표시 (체크박스 리스너 콜백 재활성화)
+        isLoadingData = false
     }
 }
 

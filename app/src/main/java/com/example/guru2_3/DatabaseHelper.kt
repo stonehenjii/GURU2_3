@@ -293,16 +293,15 @@ data class Task(val id: Long, val tagId: Long, val title: String, val scheduledD
         cursor.close()
         return taskList
     }
-    // 새 태그 생성
-    fun createTag(tagName: String): Long {
+    // 새 태그 생성 (수정됨 - userId 매개변수 추가)
+    fun createTag(userId: Long, tagName: String): Long {
         val db = writableDatabase
         val values = ContentValues().apply {
-            //put("name", tagName)
             put("tag_name", tagName)
             put("created_date", System.currentTimeMillis())
-            put("user_id", 1)
+            put(KEY_USER_ID, userId)  // 매개변수로 받은 userId 사용
         }
-        return db.insert("tags", null, values)
+        return db.insert(TABLE_TAGS, null, values)
     }
 
     // 태그 정보 가져오기
@@ -326,11 +325,17 @@ data class Task(val id: Long, val tagId: Long, val title: String, val scheduledD
         }
     }
 
-    // 모든 태그 가져오기
+    // 사용자별 태그 가져오기 (수정됨 - userId 조건 추가)
     fun getAllTags(userId: Long): List<Pair<Long, String>> {
         val tags = mutableListOf<Pair<Long, String>>()
         val db = readableDatabase
-        val cursor = db.query("tags", arrayOf("id", "tag_name"), null, null, null, null, "id ASC")
+        val cursor = db.query(
+            "tags", 
+            arrayOf("id", "tag_name"), 
+            "$KEY_USER_ID = ?",  // userId 조건 추가
+            arrayOf(userId.toString()), 
+            null, null, "id ASC"
+        )
 
         while (cursor.moveToNext()) {
             val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))

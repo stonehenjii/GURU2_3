@@ -154,6 +154,7 @@ class MainActivity : AppCompatActivity() {
          */
         todoAdapter = TodoAdapter(mutableListOf(), dbHelper) { 
             // 태스크 상태 변경 시 캘린더 새로고침 (빨간색 원 ↔ 초록색 체크)
+            // 단, 사용자가 직접 체크박스를 클릭한 경우에만 실행
             refreshCalendar()
         }
 
@@ -217,7 +218,7 @@ class MainActivity : AppCompatActivity() {
             val text = todoListEdt.text.toString()
             val selectedTag = spinner.selectedItem as? String ?: "태그 없음"
             if (text.isNotBlank()) {
-                // 날짜 선택 다이얼로그 표시
+                // 날짜 선택 다이얼로그 표시 (현재 선택된 날짜를 기본값으로 설정)
                 showDatePickerDialog { selectedDateForTask ->
                     // 태그 ID 찾기 (멤버 변수 사용)
                     val selectedTagPair = tagPairs.find { it.second == selectedTag }
@@ -226,18 +227,31 @@ class MainActivity : AppCompatActivity() {
                     // 데이터베이스에 태스크 저장
                     val taskId = dbHelper.addTaskWithDate(userId, tagId, text, selectedDateForTask)
                     
-                    // UI에 추가 (현재 선택된 날짜와 같은 경우에만)
-                    if (selectedDateForTask == selectedDate) {
-                        val todoItem = TodoItem(taskId, text, selectedTag, selectedDateForTask)
+                    // 선택된 날짜로 화면 전환 및 태스크 목록 업데이트
+                    if (selectedDateForTask != selectedDate) {
+                        // 다른 날짜를 선택한 경우: 해당 날짜로 화면 전환
+                        selectedDate = selectedDateForTask
+                        selectedDateText.text = selectedDate
+                        
+                        // 캘린더에서 해당 날짜 하이라이트 (주간 캘린더 범위 내인 경우)
+                        updateCalendarHighlight()
+                        
+                        Toast.makeText(this, "태스크가 $selectedDateForTask 에 추가되어 화면이 전환되었습니다", Toast.LENGTH_LONG).show()
+                    } else {
+                        // 같은 날짜인 경우: 현재 목록에 추가
+                        val todoItem = TodoItem(taskId, text, selectedTag, selectedDateForTask, false)
                         todoAdapter.addItem(todoItem)
+                        
+                        Toast.makeText(this, "태스크가 $selectedDateForTask 에 추가되었습니다", Toast.LENGTH_SHORT).show()
                     }
+                    
+                    // 새로고침하여 해당 날짜의 모든 태스크 로드
+                    loadExistingTasks()
                     
                     todoListEdt.text.clear()
                     
-                    // 캘린더 업데이트
+                    // 캘린더 상태 업데이트
                     refreshCalendar()
-                    
-                    Toast.makeText(this, "태스크가 $selectedDateForTask 에 추가되었습니다", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 Toast.makeText(this, "할 일을 입력하세요", Toast.LENGTH_SHORT).show()
@@ -305,13 +319,17 @@ class MainActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu);
     }
 
+    companion object {
+        private const val REQUEST_CODE_TAG_ACTIVITY = 1001
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.profile -> {
-                // 사용자 설정 눌렀을 때 동작
+                // 사용자 설정 눌렀을 때 동작 (결과 받기 위해 startActivityForResult 사용)
                 val intent = Intent(this, TagActivity::class.java)
                 intent.putExtra("USER_ID", userId)
-                startActivity(intent)
+                startActivityForResult(intent, REQUEST_CODE_TAG_ACTIVITY)
                 return true
             }
             R.id.timerSetting -> {
@@ -437,7 +455,27 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         loadExistingTags()  // ← 태그 목록 다시 불러옴 (DB에서)
         refreshCalendar() // 캘린더 상태 업데이트
-
+    }
+    
+    /**
+     * TagActivity에서 돌아온 결과를 처리하는 함수
+     * 
+     * @param requestCode 요청 코드
+     * @param resultCode 결과 코드 (RESULT_OK: 태스크 상태 변경됨)
+     * @param data 추가 데이터 (현재 미사용)
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        when (requestCode) {
+            REQUEST_CODE_TAG_ACTIVITY -> {
+                if (resultCode == RESULT_OK) {
+                    // TagActivity에서 태스크 상태가 변경된 경우
+                    refreshCalendar() // 캘린더 즉시 업데이트
+                    Toast.makeText(this, "태스크 상태 변경이 캘린더에 반영되었습니다", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     /**
@@ -795,6 +833,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * 현재 selectedDate에 해당하는 캘린더 날짜를 하이라이트하는 함수
+     * 
+     * 기능:
+     * - 현재 주간 캘린더에서 selectedDate에 해당하는 날짜를 찾아 하이라이트
+     * - 주간 캘린더 범위를 벗어난 경우에는 하이라이트하지 않음
+     * 
+     * 호출 시점:
+     * - 태스크 추가 시 다른 날짜로 화면 전환 후
+     * - selectedDate가 프로그래매틱하게 변경된 후
+     */
+    private fun updateCalendarHighlight() {
+        val calendar = Calendar.getInstance()
+        val currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+        
+        // 이번주 일요일 날짜 계산
+        val daysToSunday = if (currentDayOfWeek == Calendar.SUNDAY) 0 else currentDayOfWeek - Calendar.SUNDAY
+        calendar.add(Calendar.DAY_OF_YEAR, -daysToSunday)
+        
+        // 이번주 날짜들 계산
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val weekDates = mutableListOf<String>()
+        
+        for (i in 0..6) {
+            val weekCalendar = Calendar.getInstance()
+            weekCalendar.time = calendar.time
+            weekCalendar.add(Calendar.DAY_OF_YEAR, i)
+            weekDates.add(dateFormat.format(weekCalendar.time))
+        }
+        
+        // selectedDate가 현재 주간 캘린더에 있는지 확인하고 하이라이트
+        val selectedIndex = weekDates.indexOf(selectedDate)
+        if (selectedIndex != -1) {
+            highlightSelectedDate(selectedIndex)
+        }
+    }
+    
+    /**
      * 새 태스크 추가 시 날짜 선택을 위한 DatePicker 다이얼로그를 표시하는 함수
      * 
      * @param onDateSelected 날짜 선택 완료 시 호출되는 콜백 함수 (선택된 날짜 문자열을 매개변수로 받음)
@@ -802,7 +877,7 @@ class MainActivity : AppCompatActivity() {
      * 기능:
      * - Android 기본 DatePickerDialog 표시
      * - 사용자가 날짜 선택 후 "확인" 버튼 클릭 시 콜백 함수 호출
-     * - 오늘 날짜를 기본값으로 설정
+     * - 현재 선택된 날짜(selectedDate)를 기본값으로 설정
      * 
      * 콜백 함수 동작:
      * 1. 사용자가 선택한 연/월/일을 받음
@@ -828,8 +903,19 @@ class MainActivity : AppCompatActivity() {
      * 6. 캘린더 상태 업데이트
      */
     private fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
-        // 현재 날짜를 기본값으로 설정
+        // 현재 선택된 날짜를 기본값으로 설정 (selectedDate가 있으면 해당 날짜, 없으면 오늘)
         val calendar = Calendar.getInstance()
+        
+        if (selectedDate.isNotEmpty()) {
+            try {
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val selectedCalendar = Calendar.getInstance()
+                selectedCalendar.time = dateFormat.parse(selectedDate) ?: calendar.time
+                calendar.time = selectedCalendar.time
+            } catch (e: Exception) {
+                // 날짜 파싱 실패 시 오늘 날짜 사용
+            }
+        }
         val year = calendar.get(Calendar.YEAR)
         val month = calendar.get(Calendar.MONTH)
         val day = calendar.get(Calendar.DAY_OF_MONTH)
