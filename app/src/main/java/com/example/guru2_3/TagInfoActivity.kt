@@ -23,6 +23,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.Switch
 import java.util.Calendar
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 
 class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
@@ -446,6 +449,8 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
                 createTagDateText.visibility = View.VISIBLE
                 if (examDate == null) {
                     showDatePicker()
+                } else {
+                    updateDateTextWithDDay() // 기존 날짜가 있으면 D-day와 함께 표시
                 }
             } else {
                 createTagDateText.visibility = View.GONE
@@ -472,7 +477,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
                 examDate = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
-                createTagDateText.text = examDate
+                updateDateTextWithDDay()
                 dbHelper.updateExamDate(currentTagId, examDate)
             },
             year, month, day
@@ -487,6 +492,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
             createTagDateSwitch.isChecked = true
             createTagDateText.visibility = View.VISIBLE
             createTagDateText.text = examDate
+            updateDateTextWithDDay()
         }
     }
 
@@ -531,6 +537,27 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         super.onResume()
         updateCompletionRate() // 화면으로 돌아올 때마다 완수율 업데이트
     }
+
+    private fun updateDateTextWithDDay() {
+        examDate?.let { dateString ->
+            try {
+                val examLocalDate = LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                val today = LocalDate.now()
+                val daysUntilExam = ChronoUnit.DAYS.between(today, examLocalDate)
+
+                val displayText = when {
+                    daysUntilExam > 0 -> "$dateString (D-${daysUntilExam})"
+                    daysUntilExam == 0L -> "$dateString (D-Day!)"
+                    else -> "$dateString (D+${-daysUntilExam})"
+                }
+
+                createTagDateText.text = displayText
+            } catch (e: Exception) {
+                createTagDateText.text = dateString
+            }
+        }
+    }
+
 
 
 }
