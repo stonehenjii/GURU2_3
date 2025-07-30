@@ -20,6 +20,274 @@
         app:layout_constraintTop_toTopOf="parent"
         app:title="타이머" />
 
+    <!-- 이번주 캘린더 -->
+    <LinearLayout
+        android:id="@+id/calendarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
+
+        <!-- 일요일 -->
+        <LinearLayout
+            android:id="@+id/sundayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="일"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/sundayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="1"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/sundayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 월요일 -->
+        <LinearLayout
+            android:id="@+id/mondayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="월"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/mondayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="2"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/mondayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 화요일 -->
+        <LinearLayout
+            android:id="@+id/tuesdayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="화"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tuesdayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="3"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/tuesdayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 수요일 -->
+        <LinearLayout
+            android:id="@+id/wednesdayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="수"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/wednesdayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="4"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/wednesdayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 목요일 -->
+        <LinearLayout
+            android:id="@+id/thursdayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="목"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/thursdayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="5"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/thursdayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 금요일 -->
+        <LinearLayout
+            android:id="@+id/fridayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="금"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/fridayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="6"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/fridayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+        <!-- 토요일 -->
+        <LinearLayout
+            android:id="@+id/saturdayContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="토"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/saturdayDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="7"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/saturdayStatus"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/btn_radio" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/secTextView"
         android:layout_width="wrap_content"
@@ -31,22 +299,6 @@
         app:layout_constraintBaseline_toBaselineOf="@+id/minTextView"
         app:layout_constraintStart_toEndOf="@+id/minTextView" />
 
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-
-        android:text=":"
-        android:textColor="@color/black"
-        android:textSize="48sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.493"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
         android:id="@+id/minTextView"
@@ -61,14 +313,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.369"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.042" />
+        app:layout_constraintTop_toBottomOf="@+id/calendarContainer"
+        app:layout_constraintVertical_bias="0.041" />
 
     <ImageButton
         android:id="@+id/setButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
         android:layout_marginEnd="50dp"
         android:layout_marginBottom="404dp"
         android:backgroundTint="@color/white"
@@ -76,10 +327,8 @@
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.434"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
-        app:layout_constraintVertical_bias="0.019"
         app:srcCompat="@android:drawable/ic_media_play"
         app:tint="@color/red" />
 
@@ -93,10 +342,10 @@
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.253"
+        app:layout_constraintHorizontal_bias="0.116"
         app:layout_constraintStart_toEndOf="@+id/setButton"
         app:layout_constraintTop_toBottomOf="@+id/secTextView"
-        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_bias="0.012"
         app:srcCompat="@android:drawable/ic_menu_rotate"
         app:tint="@color/red" />
 
@@ -118,43 +367,52 @@
         app:tint="@color/red" />
 
 
+    <!-- 선택된 날짜 표시 -->
+
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="113dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="340dp"
+        android:background="@drawable/edittext_rounded"
+        app:layout_constraintStart_toEndOf="@+id/todoListEdt"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <EditText
         android:id="@+id/todoListEdt"
         android:layout_width="189dp"
         android:layout_height="38dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="344dp"
         android:background="@drawable/edittext_rounded"
         android:hint="할 일 추가하기"
         android:inputType="text"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
-        app:layout_constraintEnd_toStartOf="@+id/spinner"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintBaseline_toBaselineOf="@+id/spinner"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/toolbar"
-        app:layout_constraintVertical_bias="0.865" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Spinner
-        android:id="@+id/spinner"
-
-        android:layout_width="112dp"
-        android:layout_height="39dp"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/edittext_rounded"
-        app:layout_constraintBottom_toTopOf="@+id/recyclerView"
-        app:layout_constraintEnd_toStartOf="@+id/listBtn"
-        app:layout_constraintTop_toTopOf="@+id/toolbar"
-        app:layout_constraintVertical_bias="0.874" />
+    <TextView
+        android:id="@+id/selectedDateText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="선택된 날짜: 오늘"
+        android:textColor="@color/black"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/todoListEdt" />
 
     <ImageButton
         android:id="@+id/listBtn"
         android:layout_width="66dp"
         android:layout_height="53dp"
-        android:layout_marginTop="113dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginTop="264dp"
+        android:layout_marginEnd="16dp"
         android:backgroundTint="@color/white"
         android:padding="1dp"
         android:scaleType="centerInside"
@@ -162,21 +420,23 @@
         app:layout_constraintTop_toBottomOf="@+id/toolbar"
         app:srcCompat="@drawable/maintomato" />
 
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:layout_width="378dp"
-        android:layout_height="385dp"
+        android:layout_width="409dp"
+        android:layout_height="284dp"
         android:layout_margin="16dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="50dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="100dp"
         android:background="@drawable/recyclerview_rounded"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.652"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/listBtn"
-        app:layout_constraintVertical_bias="0.044" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/textView7"

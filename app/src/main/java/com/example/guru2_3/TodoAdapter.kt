@@ -9,7 +9,9 @@ import com.example.guru2_3.R
 
 
 class TodoAdapter(
-    private val items: MutableList<TodoItem>
+    private val items: MutableList<TodoItem>,
+    private val dbHelper: DatabaseHelper? = null,
+    private val onTaskStatusChanged: (() -> Unit)? = null
 ) : RecyclerView.Adapter<TodoAdapter.TodoViewHolder>() {
 
     inner class TodoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -33,9 +35,12 @@ class TodoAdapter(
         holder.checkBox.isChecked = item.isDone
         holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
             item.isDone = isChecked
+            // 데이터베이스 업데이트
+            dbHelper?.updateTaskCompletion(item.id, isChecked)
+            // 태스크 상태 변경 시 콜백 호출
+            onTaskStatusChanged?.invoke()
         }
     }
-
 
     override fun getItemCount(): Int = items.size
 

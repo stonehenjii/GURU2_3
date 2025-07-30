@@ -526,6 +526,75 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return db.delete(TABLE_FOCUS_TIMERS, "$KEY_ID = ?", arrayOf(id.toString()))
     }
 
+    // 태스크 추가
+    fun addTask(userId: Long, tagId: Long, title: String): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(KEY_USER_ID, userId)
+            put(KEY_TAG_ID, tagId)
+            put("title", title)
+        }
+        return db.insert(TABLE_TASKS, null, values)
+    }
+
+    // 날짜별 태스크 추가
+    fun addTaskWithDate(userId: Long, tagId: Long, title: String, scheduledDate: String): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(KEY_USER_ID, userId)
+            put(KEY_TAG_ID, tagId)
+            put("title", title)
+            put("scheduled_date", scheduledDate)
+        }
+        return db.insert(TABLE_TASKS, null, values)
+    }
+
+    // 태스크 완료 상태 업데이트
+    fun updateTaskCompletion(taskId: Long, isCompleted: Boolean): Int {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put("is_completed", if (isCompleted) 1 else 0)
+            if (isCompleted) {
+                put("completed_at", getCurrentDate())
+            }
+        }
+        return db.update(TABLE_TASKS, values, "$KEY_ID = ?", arrayOf(taskId.toString()))
+    }
+
+    // 날짜별 태스크 조회
+    fun getTasksByDate(userId: Long, date: String): List<Task> {
+        val tasks = mutableListOf<Task>()
+        val db = this.readableDatabase
+        val cursor = db.query(
+            TABLE_TASKS,
+            null,
+            "$KEY_USER_ID = ? AND scheduled_date = ?",
+            arrayOf(userId.toString(), date),
+            null, null, null
+        )
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID))
+            val tagId = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_TAG_ID))
+            val title = cursor.getString(cursor.getColumnIndexOrThrow("title"))
+            val isCompleted = cursor.getInt(cursor.getColumnIndexOrThrow("is_completed")) == 1
+            tasks.add(Task(id, tagId, title, isCompleted))
+        }
+        cursor.close()
+        return tasks
+    }
+
+    // 날짜별 태스크 완료 상태 확인 (모든 태스크가 완료되었는지)
+    fun areAllTasksCompletedForDate(userId: Long, date: String): Boolean {
+        val tasks = getTasksByDate(userId, date)
+        return tasks.isNotEmpty() && tasks.all { it.isCompleted }
+    }
+
+    // 날짜별 태스크 존재 여부 확인
+    fun hasTasksForDate(userId: Long, date: String): Boolean {
+        val tasks = getTasksByDate(userId, date)
+        return tasks.isNotEmpty()
+    }
 
 
 }
