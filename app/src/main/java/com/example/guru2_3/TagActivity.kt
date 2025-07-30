@@ -98,20 +98,20 @@ class TagActivity : AppCompatActivity() {
         }
     }
 
-    private fun moveExistingTagToScrollContainer() {
-        val originalTagContainer = findViewById<LinearLayout>(R.id.tagContainer)
-        originalTagContainer?.let { original ->
-            val nameEditText = original.findViewById<EditText>(R.id.createTagNameEditText)
-            val tagName = nameEditText?.hint?.toString() ?: "태그 이름"
-
-            // 데이터베이스에 첫 번째 태그 생성
-            val tagId = dbHelper.createTag(tagName)
-            val firstTag = createTagView(tagName, tagId,  isEditMode = true)
-            scrollContainer.addView(firstTag)
-
-            original.visibility = android.view.View.GONE
-        }
-    }
+//    private fun moveExistingTagToScrollContainer() {
+//        val originalTagContainer = findViewById<LinearLayout>(R.id.tagContainer)
+//        originalTagContainer?.let { original ->
+//            val nameEditText = original.findViewById<EditText>(R.id.createTagNameEditText)
+//            val tagName = nameEditText?.hint?.toString() ?: "태그 이름"
+//
+//            // 데이터베이스에 첫 번째 태그 생성
+//            val tagId = dbHelper.createTag(tagName)
+//            val firstTag = createTagView(tagName, tagId,  isEditMode = true)
+//            scrollContainer.addView(firstTag)
+//
+//            original.visibility = android.view.View.GONE
+//        }
+//    }
 
     private fun addNewTag() {
         tagCounter++
