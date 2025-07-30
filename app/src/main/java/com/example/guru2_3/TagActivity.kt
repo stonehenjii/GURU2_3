@@ -204,10 +204,20 @@ class TagActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    /**
+     * 액티비티가 다시 활성화될 때 호출되는 함수
+     * 
+     * 다른 화면 (예: TagInfoActivity, MainActivity)에서 태스크 상태가 변경된 후
+     * 이 화면으로 돌아올 때 최신 완수율을 반영하기 위해 사용
+     * 
+     * 실행 순서:
+     * 1. loadExistingTags(): 데이터베이스에서 최신 태그 목록 로드
+     * 2. updateCompletionRates(): 각 태그의 완수율을 최신 상태로 업데이트
+     */
     override fun onResume() {
         super.onResume()
-        loadExistingTags()
-
+        loadExistingTags()        // 최신 태그 목록 로드
+        updateCompletionRates()   // 완수율 실시간 업데이트
     }
     // 기존 태그들을 데이터베이스에서 로드하는 메서드 추가
     private fun loadExistingTags() {
@@ -220,5 +230,41 @@ class TagActivity : AppCompatActivity() {
         }
 
         tagCounter = existingTags.size
+    }
+
+    /**
+     * 화면에 표시된 모든 태그의 완수율을 실시간으로 업데이트하는 함수
+     * 
+     * 동작 과정:
+     * 1. scrollContainer 내의 모든 태그 뷰를 순회
+     * 2. 각 태그 컨테이너에서 태그 ID를 추출 (View.tag 속성에 저장됨)
+     * 3. 해당 태그 ID로 데이터베이스에서 완수율 계산
+     * 4. 완수율 TextView에 "완수율: XX%" 형태로 표시
+     * 
+     * 호출 시점:
+     * - onResume(): 다른 화면에서 돌아올 때
+     * - 태스크 상태가 변경된 후
+     * 
+     * UI 구조 참고:
+     * TagContainer (LinearLayout)
+     * ├── EditText (태그 이름) - index 0
+     * ├── TextView (완수율) - index 1  ← 여기를 업데이트
+     * └── Switch (시험일정) - index 2
+     */
+    private fun updateCompletionRates() {
+        // scrollContainer 내의 모든 태그 뷰를 순회하며 완수율 업데이트
+        for (i in 0 until scrollContainer.childCount) {
+            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
+            val tagId = tagContainer.tag as Long // 태그 ID는 View의 tag 속성에 저장됨
+            
+            // 태그 컨테이너의 두 번째 자식이 완수율을 표시하는 TextView
+            val finishRateText = tagContainer.getChildAt(1) as TextView
+            
+            // 데이터베이스에서 해당 태그의 완수율을 계산하여 가져옴
+            val completionRate = dbHelper.getTagCompletionRate(tagId)
+            
+            // "완수율: XX%" 형태로 텍스트 업데이트
+            finishRateText.text = "완수율: ${completionRate}%"
+        }
     }
 }

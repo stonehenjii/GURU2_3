@@ -596,5 +596,48 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return tasks.isNotEmpty()
     }
 
+    /**
+     * 특정 태그의 완수율을 계산하는 함수
+     * 
+     * @param tagId 완수율을 계산할 태그의 ID
+     * @return 완수율 (0~100 사이의 정수값, 예: 70은 70%를 의미)
+     * 
+     * 동작 방식:
+     * 1. 해당 태그에 속한 모든 태스크의 총 개수를 COUNT(*)로 계산
+     * 2. 완료된 태스크의 개수를 SUM(is_completed)로 계산 (is_completed가 1이면 완료, 0이면 미완료)
+     * 3. (완료된 태스크 / 전체 태스크) * 100으로 완수율을 퍼센트로 변환
+     * 4. 태스크가 없는 경우 0%를 반환
+     * 
+     * 예시:
+     * - 총 10개 태스크 중 7개 완료 → 70% 반환
+     * - 총 5개 태스크 중 5개 완료 → 100% 반환
+     * - 태스크가 없는 경우 → 0% 반환
+     */
+    fun getTagCompletionRate(tagId: Long): Int {
+        val db = this.readableDatabase
+        
+        // SQL 쿼리: 특정 태그의 전체 태스크 개수와 완료된 태스크 개수를 한 번에 조회
+        val cursor = db.query(
+            TABLE_TASKS,
+            arrayOf("COUNT(*) as total", "SUM(is_completed) as completed"),
+            "$KEY_TAG_ID = ?",
+            arrayOf(tagId.toString()),
+            null, null, null
+        )
+        
+        var completionRate = 0
+        if (cursor.moveToFirst()) {
+            val totalTasks = cursor.getInt(cursor.getColumnIndexOrThrow("total"))
+            val completedTasks = cursor.getInt(cursor.getColumnIndexOrThrow("completed"))
+            
+            // 태스크가 존재하는 경우에만 완수율 계산 (0으로 나누기 방지)
+            if (totalTasks > 0) {
+                // 소수점 계산 후 정수로 변환하여 퍼센트 값 반환
+                completionRate = ((completedTasks.toDouble() / totalTasks.toDouble()) * 100).toInt()
+            }
+        }
+        cursor.close()
+        return completionRate
+    }
 
 }

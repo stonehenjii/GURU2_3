@@ -435,6 +435,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         updateTimeChart()
         loadExamDateFromDatabase()
         setupDateSwitch()
+        updateCompletionRate() // 태그 데이터 로드 완료 후 완수율 계산 및 표시
     }
 
 
@@ -489,6 +490,47 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         }
     }
 
+    /**
+     * 현재 태그의 완수율을 계산하여 UI에 표시하는 함수
+     * 
+     * @see createTagFinishRate TextView에 완수율을 표시
+     * 
+     * 동작 과정:
+     * 1. currentTagId를 사용하여 데이터베이스에서 완수율 계산
+     * 2. "완수율: XX%" 형태로 TextView에 표시
+     * 
+     * 호출 시점:
+     * - onCreate(): 화면 최초 로드 시
+     * - onResume(): 다른 화면에서 돌아올 때 (예: MainActivity에서 태스크 완료 후)
+     * 
+     * UI 업데이트 대상:
+     * activity_tag_info.xml의 createTagFinishRate TextView
+     */
+    private fun updateCompletionRate() {
+        // DatabaseHelper를 통해 현재 태그의 완수율 계산
+        val completionRate = dbHelper.getTagCompletionRate(currentTagId)
+        
+        // UI에 "완수율: XX%" 형태로 표시
+        createTagFinishRate.text = "완수율: ${completionRate}%"
+    }
+
+    /**
+     * TagInfoActivity가 다시 활성화될 때 호출되는 함수
+     * 
+     * 사용자가 MainActivity에서 태스크를 완료/미완료로 변경한 후
+     * 이 화면으로 돌아올 때 최신 완수율을 반영하기 위해 필요
+     * 
+     * 예시 시나리오:
+     * 1. TagInfoActivity에서 완수율 50% 확인
+     * 2. MainActivity로 이동하여 태스크 2개 더 완료
+     * 3. 다시 TagInfoActivity로 돌아옴
+     * 4. onResume()에서 updateCompletionRate() 호출
+     * 5. 업데이트된 완수율 70% 표시
+     */
+    override fun onResume() {
+        super.onResume()
+        updateCompletionRate() // 화면으로 돌아올 때마다 완수율 업데이트
+    }
 
 
 }

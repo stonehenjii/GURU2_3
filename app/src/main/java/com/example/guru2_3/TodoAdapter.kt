@@ -8,6 +8,22 @@ import com.example.guru2_3.TodoItem
 import com.example.guru2_3.R
 
 
+/**
+ * 투두리스트를 표시하는 RecyclerView 어댑터 (캘린더 연동 기능 포함)
+ * 
+ * @param items 표시할 투두 아이템 리스트 (선택된 날짜의 태스크들)
+ * @param dbHelper 데이터베이스 헬퍼 (태스크 완료 상태 업데이트용)
+ * @param onTaskStatusChanged 태스크 상태 변경 시 호출되는 콜백 함수 (캘린더 새로고침용)
+ * 
+ * 캘린더 연동 기능:
+ * 1. 사용자가 체크박스 클릭 시 데이터베이스에 완료 상태 저장
+ * 2. onTaskStatusChanged 콜백을 통해 MainActivity의 refreshCalendar() 호출
+ * 3. 캘린더의 해당 날짜 상태 아이콘이 실시간으로 업데이트됨
+ * 
+ * 데이터 흐름:
+ * 체크박스 클릭 → DB 업데이트 → onTaskStatusChanged() → refreshCalendar() → updateCalendarStatus()
+ * → 캘린더 상태 아이콘 변경 (빨간색 원 ↔ 초록색 체크)
+ */
 class TodoAdapter(
     private val items: MutableList<TodoItem>,
     private val dbHelper: DatabaseHelper? = null,
@@ -31,13 +47,33 @@ class TodoAdapter(
         holder.textView.text = "${position + 1}. ${item.tagName} : ${item.text}"
         holder.checkBox.isChecked = item.isDone
 
-        holder.checkBox.setOnCheckedChangeListener(null) // 리스너 초기화
+        // 체크박스 리스너 중복 호출 방지를 위해 일시적으로 제거
+        holder.checkBox.setOnCheckedChangeListener(null)
+        
+        // 현재 태스크의 완료 상태를 체크박스에 반영
         holder.checkBox.isChecked = item.isDone
+        
+        /**
+         * 체크박스 상태 변경 시 캘린더 연동 처리
+         * 
+         * 동작 순서:
+         * 1. 메모리의 TodoItem 객체 상태 업데이트
+         * 2. 데이터베이스에 변경된 완료 상태 저장
+         * 3. onTaskStatusChanged 콜백 호출 → MainActivity.refreshCalendar() 실행
+         * 4. 캘린더 상태 아이콘 실시간 업데이트
+         * 
+         * 캘린더 상태 변경 예시:
+         * - 마지막 미완료 태스크 체크 시: 빨간색 원 → 초록색 체크
+         * - 완료된 태스크 체크 해제 시: 초록색 체크 → 빨간색 원
+         */
         holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
+            // 1. 메모리의 TodoItem 상태 업데이트
             item.isDone = isChecked
-            // 데이터베이스 업데이트
+            
+            // 2. 데이터베이스에 변경 사항 저장
             dbHelper?.updateTaskCompletion(item.id, isChecked)
-            // 태스크 상태 변경 시 콜백 호출
+            
+            // 3. 캘린더 새로고침을 위한 콜백 호출 (MainActivity.refreshCalendar())
             onTaskStatusChanged?.invoke()
         }
     }
