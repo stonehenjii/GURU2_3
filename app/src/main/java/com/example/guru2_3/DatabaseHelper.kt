@@ -250,15 +250,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return db.insert(TABLE_TAGS, null, values)
     }
 
-    fun addTask(userId: Long, tagId: Long, title: String): Long {
-        val db = this.writableDatabase
-        val values = ContentValues().apply {
-            put(KEY_USER_ID, userId)
-            put(KEY_TAG_ID, tagId)
-            put("title", title)
-        }
-        return db.insert(TABLE_TASKS, null, values)
-    }
+
 
     fun getTasksForTag(tagId: Long): List<Task> {
         val taskList = ArrayList<Task>()
