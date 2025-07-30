@@ -47,12 +47,22 @@
                 android:textColor="#000000"
                 android:textSize="20sp" />
 
+            <TextView
+                android:id="@+id/createTagDdayText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:text="D-day: 설정되지 않음"
+                android:textColor="#000000"
+                android:textSize="18sp" />
+
             <Switch
                 android:id="@+id/createTagDateSwitch"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginLeft="10dp"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="10dp"
                 android:gravity="center_horizontal|left"
                 android:text="시험일정"
                 android:textColor="#050000"

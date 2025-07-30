@@ -17,6 +17,10 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.constraintlayout.widget.ConstraintLayout
 import android.graphics.Color
 import androidx.core.graphics.toColorInt
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.Date
 
 class TagActivity : AppCompatActivity() {
     private lateinit var scrollContainer: LinearLayout
@@ -172,7 +176,19 @@ class TagActivity : AppCompatActivity() {
         finishRateParams.topMargin = (20 * dpToPx).toInt()
         finishRateText.layoutParams = finishRateParams
 
-        // 3. SwitchCompat 추가 (시험일정)
+        // 3. TextView 추가 (D-day 표시)
+        val ddayText = TextView(this)
+        ddayText.text = "D-day: 설정되지 않음" // 초기값 설정
+        ddayText.setTextColor(Color.BLACK)
+        ddayText.textSize = 18f
+        val ddayParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        ddayParams.topMargin = (10 * dpToPx).toInt()
+        ddayText.layoutParams = ddayParams
+
+        // 4. SwitchCompat 추가 (시험일정)
         val dateSwitch = SwitchCompat(this)
         dateSwitch.text = "시험일정"
         dateSwitch.textSize = 20f
@@ -180,7 +196,7 @@ class TagActivity : AppCompatActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        switchParams.topMargin = (20 * dpToPx).toInt()
+        switchParams.topMargin = (10 * dpToPx).toInt()
         dateSwitch.layoutParams = switchParams
 
         // Switch 클릭 리스너 설정 - 각 태그별 고유 데이터 전달
@@ -192,6 +208,7 @@ class TagActivity : AppCompatActivity() {
         // 모든 뷰를 컨테이너에 추가
         tagContainer.addView(nameEditText)
         tagContainer.addView(finishRateText)
+        tagContainer.addView(ddayText)
         tagContainer.addView(dateSwitch)
 
         return tagContainer
@@ -208,16 +225,18 @@ class TagActivity : AppCompatActivity() {
      * 액티비티가 다시 활성화될 때 호출되는 함수
      * 
      * 다른 화면 (예: TagInfoActivity, MainActivity)에서 태스크 상태가 변경된 후
-     * 이 화면으로 돌아올 때 최신 완수율을 반영하기 위해 사용
+     * 이 화면으로 돌아올 때 최신 완수율과 D-day를 반영하기 위해 사용
      * 
      * 실행 순서:
      * 1. loadExistingTags(): 데이터베이스에서 최신 태그 목록 로드
      * 2. updateCompletionRates(): 각 태그의 완수율을 최신 상태로 업데이트
+     * 3. updateDdays(): 각 태그의 D-day를 최신 상태로 업데이트
      */
     override fun onResume() {
         super.onResume()
         loadExistingTags()        // 최신 태그 목록 로드
         updateCompletionRates()   // 완수율 실시간 업데이트
+        updateDdays()             // D-day 실시간 업데이트
     }
     // 기존 태그들을 데이터베이스에서 로드하는 메서드 추가
     private fun loadExistingTags() {
@@ -249,7 +268,8 @@ class TagActivity : AppCompatActivity() {
      * TagContainer (LinearLayout)
      * ├── EditText (태그 이름) - index 0
      * ├── TextView (완수율) - index 1  ← 여기를 업데이트
-     * └── Switch (시험일정) - index 2
+     * ├── TextView (D-day) - index 2  ← 여기를 업데이트
+     * └── Switch (시험일정) - index 3
      */
     private fun updateCompletionRates() {
         // scrollContainer 내의 모든 태그 뷰를 순회하며 완수율 업데이트
@@ -265,6 +285,67 @@ class TagActivity : AppCompatActivity() {
             
             // "완수율: XX%" 형태로 텍스트 업데이트
             finishRateText.text = "완수율: ${completionRate}%"
+        }
+    }
+
+    /**
+     * 화면에 표시된 모든 태그의 D-day를 실시간으로 업데이트하는 함수
+     * 
+     * 동작 과정:
+     * 1. scrollContainer 내의 모든 태그 뷰를 순회
+     * 2. 각 태그 컨테이너에서 태그 ID를 추출
+     * 3. 해당 태그 ID로 데이터베이스에서 시험 날짜 조회
+     * 4. D-day 계산 후 TextView에 표시
+     * 
+     * D-day 표시 형식:
+     * - 시험일 전: "D-5 (2024-01-15)"
+     * - 시험일 당일: "D-Day! (2024-01-10)"
+     * - 시험일 후: "D+3 (2024-01-07)"
+     * - 날짜 미설정: "D-day: 설정되지 않음"
+     */
+    private fun updateDdays() {
+        // scrollContainer 내의 모든 태그 뷰를 순회하며 D-day 업데이트
+        for (i in 0 until scrollContainer.childCount) {
+            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
+            val tagId = tagContainer.tag as Long // 태그 ID는 View의 tag 속성에 저장됨
+            
+            // 태그 컨테이너의 세 번째 자식이 D-day를 표시하는 TextView
+            val ddayText = tagContainer.getChildAt(2) as TextView
+            
+            // 데이터베이스에서 해당 태그의 시험 날짜 조회
+            val examDate = dbHelper.getExamDate(tagId)
+            
+            if (examDate != null) {
+                try {
+                    // 시험 날짜 파싱 및 D-day 계산 (Calendar 사용)
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val examDateParsed = dateFormat.parse(examDate)
+                    val today = Calendar.getInstance().time
+                    
+                    if (examDateParsed != null) {
+                        // 두 날짜 간의 차이를 일 단위로 계산
+                        val timeDiff = examDateParsed.time - today.time
+                        val daysUntilExam = (timeDiff / (1000 * 60 * 60 * 24)).toInt()
+                        
+                        // D-day 형식에 따라 텍스트 설정
+                        val displayText = when {
+                            daysUntilExam > 0 -> "D-${daysUntilExam} ($examDate)"
+                            daysUntilExam == 0 -> "D-Day! ($examDate)"
+                            else -> "D+${-daysUntilExam} ($examDate)"
+                        }
+                        
+                        ddayText.text = displayText
+                    } else {
+                        ddayText.text = "시험일: $examDate"
+                    }
+                } catch (e: Exception) {
+                    // 날짜 파싱 실패 시 원본 날짜 표시
+                    ddayText.text = "시험일: $examDate"
+                }
+            } else {
+                // 시험 날짜가 설정되지 않은 경우
+                ddayText.text = "D-day: 설정되지 않음"
+            }
         }
     }
 }

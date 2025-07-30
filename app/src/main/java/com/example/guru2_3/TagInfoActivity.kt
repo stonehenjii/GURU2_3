@@ -34,6 +34,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
     private lateinit var timeChart: LineChart
     //private lateinit var createTagNameEditText: EditText
     private lateinit var createTagFinishRate: TextView
+    private lateinit var createTagDdayText: TextView
     private lateinit var createTagDateText: TextView
     private lateinit var tagMoveicon: ImageView
     private lateinit var tagMoveText: TextView
@@ -71,6 +72,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         timeChart = findViewById(R.id.timeChart)
         createTagNameTextView = findViewById(R.id.createTagNameTextView)
         createTagFinishRate = findViewById(R.id.createTagFinishRate)
+        createTagDdayText = findViewById(R.id.createTagDdayText)
         createTagDateText = findViewById(R.id.createTagDateText)
         scoreInput = findViewById(R.id.scoreInput)
         tagMoveicon = findViewById(R.id.tagMoveicon)
@@ -439,6 +441,7 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
         loadExamDateFromDatabase()
         setupDateSwitch()
         updateCompletionRate() // 태그 데이터 로드 완료 후 완수율 계산 및 표시
+        updateDdayDisplay()    // 태그 데이터 로드 완료 후 D-day 계산 및 표시
     }
 
 
@@ -477,7 +480,8 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
                 examDate = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
-                updateDateTextWithDDay()
+                updateDateTextWithDDay()  // 기존 숨겨진 텍스트 업데이트
+                updateDdayDisplay()       // 완수율 아래 D-day 표시 업데이트
                 dbHelper.updateExamDate(currentTagId, examDate)
             },
             year, month, day
@@ -521,37 +525,104 @@ class TagInfoActivity : AppCompatActivity(), OnChartValueSelectedListener {
     }
 
     /**
+     * 현재 태그의 D-day를 계산하여 완수율 아래에 표시하는 함수
+     * 
+     * @see createTagDdayText TextView에 D-day를 표시 (완수율 아래에 항상 표시)
+     * 
+     * 동작 과정:
+     * 1. currentTagId를 사용하여 데이터베이스에서 시험 날짜 조회
+     * 2. 현재 날짜와 비교하여 D-day 계산
+     * 3. 계산된 D-day를 적절한 형식으로 표시
+     * 
+     * D-day 표시 형식:
+     * - 시험일 전: "D-5 (2024-01-15)"
+     * - 시험일 당일: "D-Day! (2024-01-10)"
+     * - 시험일 후: "D+3 (2024-01-07)"
+     * - 날짜 미설정: "D-day: 설정되지 않음"
+     * 
+     * 호출 시점:
+     * - onCreate(): 화면 최초 로드 시
+     * - onResume(): 다른 화면에서 돌아올 때
+     * - 시험 날짜 변경 시 (DatePicker에서 날짜 선택 후)
+     */
+    private fun updateDdayDisplay() {
+        // 데이터베이스에서 현재 태그의 시험 날짜 조회
+        val examDate = dbHelper.getExamDate(currentTagId)
+        
+        if (examDate != null) {
+            try {
+                // 시험 날짜 파싱 및 D-day 계산 (Calendar 사용)
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                val examDateParsed = dateFormat.parse(examDate)
+                val today = java.util.Calendar.getInstance().time
+                
+                if (examDateParsed != null) {
+                    // 두 날짜 간의 차이를 일 단위로 계산
+                    val timeDiff = examDateParsed.time - today.time
+                    val daysUntilExam = (timeDiff / (1000 * 60 * 60 * 24)).toInt()
+                    
+                    // D-day 형식에 따라 텍스트 설정
+                    val displayText = when {
+                        daysUntilExam > 0 -> "D-${daysUntilExam} ($examDate)"
+                        daysUntilExam == 0 -> "D-Day! ($examDate)"
+                        else -> "D+${-daysUntilExam} ($examDate)"
+                    }
+                    
+                    createTagDdayText.text = displayText
+                } else {
+                    createTagDdayText.text = "시험일: $examDate"
+                }
+            } catch (e: Exception) {
+                // 날짜 파싱 실패 시 원본 날짜 표시
+                createTagDdayText.text = "시험일: $examDate"
+            }
+        } else {
+            // 시험 날짜가 설정되지 않은 경우
+            createTagDdayText.text = "D-day: 설정되지 않음"
+        }
+    }
+
+    /**
      * TagInfoActivity가 다시 활성화될 때 호출되는 함수
      * 
      * 사용자가 MainActivity에서 태스크를 완료/미완료로 변경한 후
-     * 이 화면으로 돌아올 때 최신 완수율을 반영하기 위해 필요
+     * 이 화면으로 돌아올 때 최신 완수율과 D-day를 반영하기 위해 필요
      * 
      * 예시 시나리오:
-     * 1. TagInfoActivity에서 완수율 50% 확인
+     * 1. TagInfoActivity에서 완수율 50%, D-5 확인
      * 2. MainActivity로 이동하여 태스크 2개 더 완료
      * 3. 다시 TagInfoActivity로 돌아옴
-     * 4. onResume()에서 updateCompletionRate() 호출
-     * 5. 업데이트된 완수율 70% 표시
+     * 4. onResume()에서 업데이트 함수들 호출
+     * 5. 업데이트된 완수율 70%, D-day 표시
      */
     override fun onResume() {
         super.onResume()
         updateCompletionRate() // 화면으로 돌아올 때마다 완수율 업데이트
+        updateDdayDisplay()    // 화면으로 돌아올 때마다 D-day 업데이트
     }
 
     private fun updateDateTextWithDDay() {
         examDate?.let { dateString ->
             try {
-                val examLocalDate = LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                val today = LocalDate.now()
-                val daysUntilExam = ChronoUnit.DAYS.between(today, examLocalDate)
+                // Calendar를 사용한 D-day 계산
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                val examDateParsed = dateFormat.parse(dateString)
+                val today = java.util.Calendar.getInstance().time
 
-                val displayText = when {
-                    daysUntilExam > 0 -> "$dateString (D-${daysUntilExam})"
-                    daysUntilExam == 0L -> "$dateString (D-Day!)"
-                    else -> "$dateString (D+${-daysUntilExam})"
+                if (examDateParsed != null) {
+                    val timeDiff = examDateParsed.time - today.time
+                    val daysUntilExam = (timeDiff / (1000 * 60 * 60 * 24)).toInt()
+
+                    val displayText = when {
+                        daysUntilExam > 0 -> "$dateString (D-${daysUntilExam})"
+                        daysUntilExam == 0 -> "$dateString (D-Day!)"
+                        else -> "$dateString (D+${-daysUntilExam})"
+                    }
+
+                    createTagDateText.text = displayText
+                } else {
+                    createTagDateText.text = dateString
                 }
-
-                createTagDateText.text = displayText
             } catch (e: Exception) {
                 createTagDateText.text = dateString
             }
