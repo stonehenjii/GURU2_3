@@ -18,7 +18,7 @@ class TimerSetting : AppCompatActivity() {
     var studyTime = 25
     var shortBreak = 5
     var longBreak = 15
-    var session = 8
+    var session = 4
     lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
