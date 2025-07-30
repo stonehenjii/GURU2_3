@@ -507,7 +507,7 @@ data class Task(val id: Long, val tagId: Long, val title: String, val scheduledD
     // 타이머 설정 조회 (기본값 반환)
     fun getDefaultTimerSettings(): FocusTimer {
         val settings = getLatestTimerSettings()
-        return settings ?: FocusTimer(0, 25, 5, 15, 8) // 기본값: 25분, 5분, 15분, 8세션
+        return settings ?: FocusTimer(0, 25, 5, 15, 4) // 기본값: 25분, 5분, 15분, 8세션
     }
 
     // 모든 타이머 설정 조회

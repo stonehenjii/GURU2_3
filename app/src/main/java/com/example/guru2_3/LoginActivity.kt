@@ -116,6 +116,7 @@ class LoginActivity : AppCompatActivity() {
         // 타이머 화면으로 이동
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("USER_ID", userId)
+        Log.d("Login", "userId: $userId")
         startActivity(intent)
         finish()
     }

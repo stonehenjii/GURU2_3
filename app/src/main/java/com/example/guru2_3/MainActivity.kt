@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     private var studyTime = 25
     private var shortBreak = 5
     private var longBreak = 15
-    private var session = 8
+    private var session = 4
     private var sessionCount = 0
     //타이머 추가 변수
     private var time = 0;
