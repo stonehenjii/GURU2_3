@@ -21,14 +21,31 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.Date
+import android.app.DatePickerDialog
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.listener.OnChartGestureListener
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import com.github.mikephil.charting.highlight.Highlight
+import android.view.MotionEvent
+import android.app.AlertDialog
 
-class TagActivity : AppCompatActivity() {
+class TagActivity : AppCompatActivity(), OnChartValueSelectedListener {
     private lateinit var scrollContainer: LinearLayout
     private lateinit var tagaddicon: ImageView
     private lateinit var tagaddText: TextView
     private lateinit var dbHelper: DatabaseHelper
     private var tagCounter = 0 // 태그 고유 ID 생성용
     private var userId: Long = 0
+    
+    // 차트 데이터 저장용
+    private val scoreEntriesMap = mutableMapOf<Long, MutableList<Entry>>()
+    private val timeEntriesMap = mutableMapOf<Long, MutableList<Entry>>()
+    private val scoreIndexMap = mutableMapOf<Long, Float>()
+    private val timeIndexMap = mutableMapOf<Long, Float>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -127,71 +144,84 @@ class TagActivity : AppCompatActivity() {
     }
 
     /**
-     * 새로운 태그 뷰를 동적으로 생성하는 함수 (사용자 흐름 개선 버전)
+     * 새로운 태그 뷰를 동적으로 생성하는 함수 (토글 기능 추가 버전)
      * 
      * @param tagName 생성할 태그의 이름
      * @param tagId 태그의 고유 ID (데이터베이스에서 자동 생성)
      * @param isEditMode 편집 모드 여부 (현재 미사용)
      * @return 생성된 태그 컨테이너 (LinearLayout)
      * 
-     * UI 개선 사항:
-     * - 기존: 완수율 → D-day → 시험일정 스위치 순서
-     * - 개선: D-day → 완수율 → 성적/시간 요약 → 수정하기 버튼 순서
-     * - 스위치 제거하고 명확한 "수정하기" 버튼으로 TagInfoActivity 진입
-     * 
-     * 생성되는 UI 구조:
+     * UI 구조 (토글 기능 포함):
      * LinearLayout (태그 컨테이너)
-     * ├── EditText (태그 이름 입력/표시)
-     * ├── TextView (D-day 표시) - 첫 번째 줄
-     * ├── TextView (완수율 표시) - 두 번째 줄  
-     * ├── TextView (성적/시간 요약) - 세 번째 줄
-     * └── Button (수정하기 버튼) - TagInfoActivity로 이동
+     * ├── LinearLayout (상단 기본 정보 - 항상 표시)
+     * │   ├── EditText (태그 이름)
+     * │   ├── TextView (D-day)
+     * │   ├── TextView (완수율)
+     * │   └── ImageView (토글 삼각형)
+     * └── LinearLayout (하단 추가 정보 - 토글로 표시/숨김)
+     *     ├── TextView (태스크 목록 제목)
+     *     ├── LinearLayout (태스크 목록 컨테이너)
+     *     ├── LinearLayout (날짜 설정 기능)
+     *     ├── LinearLayout (성적 그래프)
+     *     ├── LinearLayout (시간 그래프)
+     *     └── Button (수정하기 버튼)
      * 
-     * 사용자 경험 개선:
-     * - 미리보기 정보를 더 많이 제공 (성적 최고점수, 총 공부시간)
-     * - 더 직관적인 "수정하기" 버튼으로 상세 화면 진입
-     * - 정보 표시 순서를 중요도에 따라 재배치
+     * 토글 기능:
+     * - 기본적으로 태그 이름, D-day, 완수율만 표시
+     * - 삼각형 클릭 시 추가 정보 표시/숨김
+     * - 추가 정보: 태스크 목록, 날짜 설정, 성적/시간 그래프
      */
     private fun createTagView(tagName: String, tagId: Long, isEditMode: Boolean): LinearLayout {
         val dpToPx = resources.displayMetrics.density
 
-        // 태그 컨테이너 생성
+        // 메인 태그 컨테이너 생성
         val tagContainer = LinearLayout(this)
         tagContainer.orientation = LinearLayout.VERTICAL
         tagContainer.setBackgroundColor("#F44336".toColorInt())
         tagContainer.tag = tagId // 태그 ID를 View의 tag로 저장
 
-        // 레이아웃 파라미터 설정 (높이 증가 - 태스크 목록과 그래프 미리보기 공간)
+        // 레이아웃 파라미터 설정 (높이를 가변적으로 변경)
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            (350 * dpToPx).toInt() // 높이를 늘려서 태스크 목록과 그래프 미리보기 공간 확보
+            LinearLayout.LayoutParams.WRAP_CONTENT // 토글에 따라 높이가 변함
         )
-
         layoutParams.topMargin = (20 * dpToPx).toInt()
-
         tagContainer.layoutParams = layoutParams
         tagContainer.id = android.view.View.generateViewId()
 
-        // 1. EditText 추가 (태그 이름)
-        val nameEditText = EditText(this)
-        nameEditText.setText(tagName) // hint 대신 text로 설정
-        nameEditText.setTypeface(null, android.graphics.Typeface.BOLD)
-        nameEditText.textSize = 18f
-        nameEditText.setTextColor(Color.BLACK)
-        nameEditText.setBackgroundColor(Color.WHITE)
-        nameEditText.setPadding(
+        // === 상단 기본 정보 컨테이너 (항상 표시) ===
+        val basicInfoContainer = LinearLayout(this)
+        basicInfoContainer.orientation = LinearLayout.VERTICAL
+        basicInfoContainer.setPadding(
             (16 * dpToPx).toInt(),
             (12 * dpToPx).toInt(),
             (16 * dpToPx).toInt(),
             (12 * dpToPx).toInt()
         )
+
+        // 태그 이름과 토글 버튼을 가로로 배치하는 컨테이너
+        val nameToggleContainer = LinearLayout(this)
+        nameToggleContainer.orientation = LinearLayout.HORIZONTAL
+
+        // 1. EditText 추가 (태그 이름)
+        val nameEditText = EditText(this)
+        nameEditText.setText(tagName)
+        nameEditText.setTypeface(null, android.graphics.Typeface.BOLD)
+        nameEditText.textSize = 18f
+        nameEditText.setTextColor(Color.BLACK)
+        nameEditText.setBackgroundColor(Color.WHITE)
+        nameEditText.setPadding(
+            (12 * dpToPx).toInt(),
+            (8 * dpToPx).toInt(),
+            (12 * dpToPx).toInt(),
+            (8 * dpToPx).toInt()
+        )
         
         val nameEditParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            (48 * dpToPx).toInt() // 최소 터치 타겟 크기 (48dp)
+            0,
+            (40 * dpToPx).toInt(),
+            1f // weight 1로 설정하여 나머지 공간 차지
         )
-        nameEditParams.topMargin = (8 * dpToPx).toInt()
-        nameEditParams.bottomMargin = (8 * dpToPx).toInt()
         nameEditText.layoutParams = nameEditParams
 
         // EditText 변경 감지 리스너
@@ -204,33 +234,72 @@ class TagActivity : AppCompatActivity() {
             }
         }
 
-        // 2. TextView 추가 (D-day 표시) - 첫 번째 줄
+        // 2. 토글 삼각형 ImageView 추가
+        val toggleButton = ImageView(this)
+        toggleButton.setImageResource(android.R.drawable.arrow_down_float) // 기본 하향 화살표
+        toggleButton.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        toggleButton.setBackgroundColor(Color.parseColor("#FF9800"))
+        toggleButton.setPadding(
+            (8 * dpToPx).toInt(),
+            (8 * dpToPx).toInt(),
+            (8 * dpToPx).toInt(),
+            (8 * dpToPx).toInt()
+        )
+        
+        val toggleParams = LinearLayout.LayoutParams(
+            (40 * dpToPx).toInt(),
+            (40 * dpToPx).toInt()
+        )
+        toggleParams.setMargins((8 * dpToPx).toInt(), 0, 0, 0)
+        toggleButton.layoutParams = toggleParams
+
+        // 3. D-day 텍스트
         val ddayText = TextView(this)
         ddayText.text = "D-day: 설정되지 않음"
         ddayText.setTextColor(Color.BLACK)
-        ddayText.textSize = 18f
+        ddayText.textSize = 16f
         val ddayParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        ddayParams.topMargin = (10 * dpToPx).toInt()
+        ddayParams.topMargin = (8 * dpToPx).toInt()
         ddayText.layoutParams = ddayParams
 
-        // 3. TextView 추가 (완수율) - 두 번째 줄
+        // 4. 완수율 텍스트
         val finishRateText = TextView(this)
         finishRateText.text = "완수율: 0%"
         finishRateText.setTextColor(Color.BLACK)
-        finishRateText.textSize = 18f
+        finishRateText.textSize = 16f
         val finishRateParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        finishRateParams.topMargin = (5 * dpToPx).toInt()
+        finishRateParams.topMargin = (4 * dpToPx).toInt()
         finishRateText.layoutParams = finishRateParams
 
-        // 4. 태스크 목록 섹션
+        // 이름+토글 컨테이너에 뷰들 추가
+        nameToggleContainer.addView(nameEditText)
+        nameToggleContainer.addView(toggleButton)
+
+        // 기본 정보 컨테이너에 뷰들 추가
+        basicInfoContainer.addView(nameToggleContainer)
+        basicInfoContainer.addView(ddayText)
+        basicInfoContainer.addView(finishRateText)
+
+        // === 하단 추가 정보 컨테이너 (토글로 표시/숨김) ===
+        val additionalInfoContainer = LinearLayout(this)
+        additionalInfoContainer.orientation = LinearLayout.VERTICAL
+        additionalInfoContainer.setPadding(
+            (16 * dpToPx).toInt(),
+            (12 * dpToPx).toInt(),
+            (16 * dpToPx).toInt(),
+            (12 * dpToPx).toInt()
+        )
+        additionalInfoContainer.visibility = android.view.View.GONE // 기본적으로 숨김
+
+        // 5. 태스크 목록 섹션
         val taskListTitle = TextView(this)
-        taskListTitle.text = "태스크 목록"
+        taskListTitle.text = "📋 태스크 목록"
         taskListTitle.setTextColor(Color.BLACK)
         taskListTitle.textSize = 16f
         taskListTitle.setTypeface(null, android.graphics.Typeface.BOLD)
@@ -238,123 +307,483 @@ class TagActivity : AppCompatActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        taskTitleParams.topMargin = (10 * dpToPx).toInt()
+        taskTitleParams.bottomMargin = (8 * dpToPx).toInt()
         taskListTitle.layoutParams = taskTitleParams
 
-        // 태스크 목록을 표시할 LinearLayout (세로 배치)
+        // 태스크 목록 컨테이너
         val taskListContainer = LinearLayout(this)
         taskListContainer.orientation = LinearLayout.VERTICAL
         val taskContainerParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        taskContainerParams.topMargin = (5 * dpToPx).toInt()
+        taskContainerParams.bottomMargin = (16 * dpToPx).toInt()
         taskListContainer.layoutParams = taskContainerParams
 
-        // 5. 성적/시간 그래프 미리보기 (제거)
-        // 그래프 기능을 제거하여 안정성 확보
-
-        // 성적과 시간 데이터의 평균값을 계산하여 표시
-        val scoreData = dbHelper.getScoreData(tagId)
-        val averageScore = if (scoreData.isNotEmpty()) {
-            val totalScore = scoreData.sumOf { it.second.toDouble() }
-            (totalScore / scoreData.size).toInt()
-        } else 0
+        // 6. 날짜 설정 기능
+        val dateSettingContainer = LinearLayout(this)
+        dateSettingContainer.orientation = LinearLayout.HORIZONTAL
         
-        val timeData = dbHelper.getTimeData(tagId)
-        val averageTime = if (timeData.isNotEmpty()) {
-            val totalTime = timeData.sumOf { it.second.toDouble() }
-            (totalTime / timeData.size).toInt()
-        } else 0
+        val dateSettingTitle = TextView(this)
+        dateSettingTitle.text = "📅 시험/마감일 설정:"
+        dateSettingTitle.setTextColor(Color.BLACK)
+        dateSettingTitle.textSize = 14f
+        dateSettingTitle.setTypeface(null, android.graphics.Typeface.BOLD)
         
-        val summaryText = TextView(this)
-        val scoreText = if (averageScore > 0) "평균 ${averageScore}점" else "데이터 없음"
-        val timeText = if (averageTime > 0) "평균 ${averageTime}시간" else "데이터 없음"
-        summaryText.text = "성적: $scoreText | 시간: $timeText"
-        summaryText.setTextColor(Color.GRAY)
-        summaryText.textSize = 14f
-        val summaryParams = LinearLayout.LayoutParams(
+        val dateButton = android.widget.Button(this)
+        dateButton.text = "날짜 선택"
+        dateButton.textSize = 12f
+        dateButton.setBackgroundColor(Color.parseColor("#4CAF50"))
+        dateButton.setTextColor(Color.WHITE)
+        dateButton.setPadding(
+            (12 * dpToPx).toInt(),
+            (6 * dpToPx).toInt(),
+            (12 * dpToPx).toInt(),
+            (6 * dpToPx).toInt()
+        )
+        
+        val dateBtnParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            (32 * dpToPx).toInt()
+        )
+        dateBtnParams.setMargins((8 * dpToPx).toInt(), 0, 0, 0)
+        dateButton.layoutParams = dateBtnParams
+        
+        // 날짜 선택 기능 구현
+        dateButton.setOnClickListener {
+            showDatePickerDialog(tagId)
+        }
+        
+        dateSettingContainer.addView(dateSettingTitle)
+        dateSettingContainer.addView(dateButton)
+        
+        val dateContainerParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        summaryParams.topMargin = (5 * dpToPx).toInt()
-        summaryText.layoutParams = summaryParams
+        dateContainerParams.bottomMargin = (16 * dpToPx).toInt()
+        dateSettingContainer.layoutParams = dateContainerParams
 
-        // 6. Button 추가 (수정하기 버튼)
-        val editButton = android.widget.Button(this)
-        editButton.text = "수정하기"
-        editButton.textSize = 16f
-        editButton.setBackgroundColor(Color.parseColor("#FF9800"))
-        editButton.setTextColor(Color.WHITE)
-        editButton.setPadding(
-            (16 * dpToPx).toInt(),
-            (12 * dpToPx).toInt(),
-            (16 * dpToPx).toInt(),
-            (12 * dpToPx).toInt()
-        )
-        val buttonParams = LinearLayout.LayoutParams(
+        // 7. 성적 그래프 섹션 (실제 LineChart)
+        val scoreGraphContainer = LinearLayout(this)
+        scoreGraphContainer.orientation = LinearLayout.VERTICAL
+        
+        val scoreGraphTitle = TextView(this)
+        scoreGraphTitle.text = "📊 모의고사 성적 그래프 (클릭해서 데이터 추가)"
+        scoreGraphTitle.setTextColor(Color.BLACK)
+        scoreGraphTitle.textSize = 14f
+        scoreGraphTitle.setTypeface(null, android.graphics.Typeface.BOLD)
+        
+        // 성적 LineChart 생성
+        val scoreChart = LineChart(this)
+        setupScoreChart(scoreChart, tagId)
+        
+        val scoreChartParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            (48 * dpToPx).toInt() // 최소 터치 타겟 크기 (48dp)
+            (200 * dpToPx).toInt() // 높이를 200dp로 설정
         )
-        buttonParams.topMargin = (10 * dpToPx).toInt()
-        editButton.layoutParams = buttonParams
+        scoreChartParams.topMargin = (8 * dpToPx).toInt()
+        scoreChart.layoutParams = scoreChartParams
+        
+        scoreGraphContainer.addView(scoreGraphTitle)
+        scoreGraphContainer.addView(scoreChart)
+        
+        val scoreContainerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        scoreContainerParams.bottomMargin = (16 * dpToPx).toInt()
+        scoreGraphContainer.layoutParams = scoreContainerParams
 
-        // 수정하기 버튼 클릭 리스너 설정
-        editButton.setOnClickListener {
-            // 버튼 텍스트를 확실히 "수정하기"로 유지
-            editButton.text = "수정하기"
-            val currentTagName = nameEditText.text.toString()
-            navigateToTagInfo(currentTagName, tagId)
+        // 8. 시간 그래프 섹션 (실제 LineChart)
+        val timeGraphContainer = LinearLayout(this)
+        timeGraphContainer.orientation = LinearLayout.VERTICAL
+        
+        val timeGraphTitle = TextView(this)
+        timeGraphTitle.text = "⏰ 모의고사 소요 시간 그래프 (클릭해서 데이터 추가)"
+        timeGraphTitle.setTextColor(Color.BLACK)
+        timeGraphTitle.textSize = 14f
+        timeGraphTitle.setTypeface(null, android.graphics.Typeface.BOLD)
+        
+        // 시간 LineChart 생성
+        val timeChart = LineChart(this)
+        setupTimeChart(timeChart, tagId)
+        
+        val timeChartParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            (200 * dpToPx).toInt() // 높이를 200dp로 설정
+        )
+        timeChartParams.topMargin = (8 * dpToPx).toInt()
+        timeChart.layoutParams = timeChartParams
+        
+        timeGraphContainer.addView(timeGraphTitle)
+        timeGraphContainer.addView(timeChart)
+        
+        val timeContainerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        timeContainerParams.bottomMargin = (16 * dpToPx).toInt()
+        timeGraphContainer.layoutParams = timeContainerParams
+
+        // 추가 정보 컨테이너에 모든 하위 뷰들 추가 (수정하기 버튼 제거)
+        additionalInfoContainer.addView(taskListTitle)
+        additionalInfoContainer.addView(taskListContainer)
+        additionalInfoContainer.addView(dateSettingContainer)
+        additionalInfoContainer.addView(scoreGraphContainer)
+        additionalInfoContainer.addView(timeGraphContainer)
+
+        // 토글 기능 구현
+        var isExpanded = false
+        toggleButton.setOnClickListener {
+            isExpanded = !isExpanded
+            if (isExpanded) {
+                additionalInfoContainer.visibility = android.view.View.VISIBLE
+                toggleButton.setImageResource(android.R.drawable.arrow_up_float)
+            } else {
+                additionalInfoContainer.visibility = android.view.View.GONE
+                toggleButton.setImageResource(android.R.drawable.arrow_down_float)
+            }
         }
 
-        // 그래프 입력 기능 제거 (안정성 확보)
-
-        // 모든 뷰를 컨테이너에 추가
-        tagContainer.addView(nameEditText)
-        tagContainer.addView(ddayText)
-        tagContainer.addView(finishRateText)
-        tagContainer.addView(taskListTitle)
-        tagContainer.addView(taskListContainer)
-        tagContainer.addView(summaryText)
-        tagContainer.addView(editButton)
+        // 메인 컨테이너에 기본 정보와 추가 정보 컨테이너 추가
+        tagContainer.addView(basicInfoContainer)
+        tagContainer.addView(additionalInfoContainer)
 
         return tagContainer
     }
 
     /**
-     * TagInfoActivity로 이동하는 함수 (수정하기 버튼 클릭 시)
+     * 성적 그래프 차트를 설정하는 함수
      * 
-     * @param tagName 태그 이름
+     * @param chart 설정할 LineChart
      * @param tagId 태그 ID
-     * 
-     * 동작 과정:
-     * 1. Intent 생성하여 TagInfoActivity 지정
-     * 2. 태그 이름과 ID를 Extra로 전달
-     * 3. 액티비티 시작
-     * 
-     * 오류 방지:
-     * - 유효한 tagId인지 확인
-     * - 디버깅을 위한 Toast 메시지 추가
      */
-    private fun navigateToTagInfo(tagName: String, tagId: Long) {
-        // 유효성 검사
-        if (tagId <= 0) {
-            Toast.makeText(this, "유효하지 않은 태그입니다.", Toast.LENGTH_SHORT).show()
+    private fun setupScoreChart(chart: LineChart, tagId: Long) {
+        chart.apply {
+            setDragEnabled(false)
+            setScaleEnabled(false)
+            setPinchZoom(false)
+            description.text = ""
+            setNoDataText("차트를 클릭해서 성적을 추가하세요")
+            setNoDataTextColor(Color.BLACK)
+            setTouchEnabled(true)
+
+            // X축 설정
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                textColor = Color.BLACK
+                setDrawGridLines(true)
+                granularity = 1f
+            }
+
+            // Y축 설정
+            axisLeft.apply {
+                textColor = Color.BLACK
+                axisMinimum = 0f
+                axisMaximum = 100f
+                setDrawGridLines(true)
+            }
+
+            axisRight.isEnabled = false
+            legend.textColor = Color.BLACK
+
+            setOnChartValueSelectedListener(this@TagActivity)
+            onChartGestureListener = object : OnChartGestureListener {
+                override fun onChartGestureStart(me: MotionEvent?, lastPerformedGesture: com.github.mikephil.charting.listener.ChartTouchListener.ChartGesture?) {}
+                override fun onChartGestureEnd(me: MotionEvent?, lastPerformedGesture: com.github.mikephil.charting.listener.ChartTouchListener.ChartGesture?) {}
+                override fun onChartLongPressed(me: MotionEvent?) {}
+                override fun onChartDoubleTapped(me: MotionEvent?) {}
+                override fun onChartSingleTapped(me: MotionEvent?) {
+                    showScoreInputDialog(tagId)
+                }
+                override fun onChartFling(me1: MotionEvent?, me2: MotionEvent?, velocityX: Float, velocityY: Float) {}
+                override fun onChartScale(me: MotionEvent?, scaleX: Float, scaleY: Float) {}
+                override fun onChartTranslate(me: MotionEvent?, dX: Float, dY: Float) {}
+            }
+        }
+        
+        // 데이터 로드
+        loadScoreData(chart, tagId)
+    }
+    
+    /**
+     * 시간 그래프 차트를 설정하는 함수
+     * 
+     * @param chart 설정할 LineChart
+     * @param tagId 태그 ID
+     */
+    private fun setupTimeChart(chart: LineChart, tagId: Long) {
+        chart.apply {
+            setDragEnabled(false)
+            setScaleEnabled(false)
+            setPinchZoom(false)
+            description.text = ""
+            setNoDataText("차트를 클릭해서 소요 시간을 추가하세요")
+            setNoDataTextColor(Color.BLACK)
+            setTouchEnabled(true)
+
+            // X축 설정
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                textColor = Color.BLACK
+                setDrawGridLines(true)
+                granularity = 1f
+            }
+
+            // Y축 설정
+            axisLeft.apply {
+                textColor = Color.BLACK
+                axisMinimum = 0f
+                axisMaximum = 300f // 300분 = 5시간으로 설정
+                setDrawGridLines(true)
+            }
+
+            axisRight.isEnabled = false
+            legend.textColor = Color.BLACK
+
+            setOnChartValueSelectedListener(this@TagActivity)
+            onChartGestureListener = object : OnChartGestureListener {
+                override fun onChartGestureStart(me: MotionEvent?, lastPerformedGesture: com.github.mikephil.charting.listener.ChartTouchListener.ChartGesture?) {}
+                override fun onChartGestureEnd(me: MotionEvent?, lastPerformedGesture: com.github.mikephil.charting.listener.ChartTouchListener.ChartGesture?) {}
+                override fun onChartLongPressed(me: MotionEvent?) {}
+                override fun onChartDoubleTapped(me: MotionEvent?) {}
+                override fun onChartSingleTapped(me: MotionEvent?) {
+                    showTimeInputDialog(tagId)
+                }
+                override fun onChartFling(me1: MotionEvent?, me2: MotionEvent?, velocityX: Float, velocityY: Float) {}
+                override fun onChartScale(me: MotionEvent?, scaleX: Float, scaleY: Float) {}
+                override fun onChartTranslate(me: MotionEvent?, dX: Float, dY: Float) {}
+            }
+        }
+        
+        // 데이터 로드
+        loadTimeData(chart, tagId)
+    }
+    
+    /**
+     * 성적 데이터를 로드하여 차트에 표시하는 함수
+     */
+    private fun loadScoreData(chart: LineChart, tagId: Long) {
+        val scoreData = dbHelper.getScoreData(tagId)
+        val entries = mutableListOf<Entry>()
+        
+        scoreData.forEachIndexed { index, (_, score) ->
+            entries.add(Entry(index.toFloat(), score))
+        }
+        
+        scoreEntriesMap[tagId] = entries
+        scoreIndexMap[tagId] = scoreData.size.toFloat()
+        
+        updateScoreChart(chart, entries)
+    }
+    
+    /**
+     * 시간 데이터를 로드하여 차트에 표시하는 함수
+     */
+    private fun loadTimeData(chart: LineChart, tagId: Long) {
+        val timeData = dbHelper.getTimeData(tagId)
+        val entries = mutableListOf<Entry>()
+        
+        timeData.forEachIndexed { index, (_, time) ->
+            entries.add(Entry(index.toFloat(), time))
+        }
+        
+        timeEntriesMap[tagId] = entries
+        timeIndexMap[tagId] = timeData.size.toFloat()
+        
+        updateTimeChart(chart, entries)
+    }
+    
+    /**
+     * 성적 차트 업데이트
+     */
+    private fun updateScoreChart(chart: LineChart, entries: List<Entry>) {
+        if (entries.isEmpty()) {
+            chart.clear()
             return
         }
         
-        // 디버깅 메시지
-        Toast.makeText(this, "태그 '$tagName' 정보 수정 화면으로 이동", Toast.LENGTH_SHORT).show()
-        
-        val intent = Intent(this, TagInfoActivity::class.java)
-        intent.putExtra("TAG_NAME", tagName)
-        intent.putExtra("TAG_ID", tagId)
-        
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, "페이지 이동 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+        val dataSet = LineDataSet(entries, "성적").apply {
+            color = Color.parseColor("#FF9800")
+            setCircleColor(Color.parseColor("#FF9800"))
+            lineWidth = 2f
+            circleRadius = 4f
+            setDrawValues(true)
+            valueTextColor = Color.BLACK
+            valueTextSize = 10f
         }
+        
+        val lineData = LineData(dataSet)
+        chart.data = lineData
+        chart.invalidate()
+    }
+    
+    /**
+     * 시간 차트 업데이트
+     */
+    private fun updateTimeChart(chart: LineChart, entries: List<Entry>) {
+        if (entries.isEmpty()) {
+            chart.clear()
+            return
+        }
+        
+        val dataSet = LineDataSet(entries, "소요시간(분)").apply {
+            color = Color.parseColor("#4CAF50")
+            setCircleColor(Color.parseColor("#4CAF50"))
+            lineWidth = 2f
+            circleRadius = 4f
+            setDrawValues(true)
+            valueTextColor = Color.BLACK
+            valueTextSize = 10f
+        }
+        
+        val lineData = LineData(dataSet)
+        chart.data = lineData
+        chart.invalidate()
+    }
+    
+    /**
+     * 성적 입력 다이얼로그 표시
+     */
+    private fun showScoreInputDialog(tagId: Long) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("성적 입력")
+        
+        val input = EditText(this)
+        input.hint = "성적을 입력하세요 (0-100)"
+        builder.setView(input)
+        
+        builder.setPositiveButton("추가") { _, _ ->
+            val scoreText = input.text.toString()
+            if (scoreText.isNotEmpty()) {
+                try {
+                    val score = scoreText.toFloat()
+                    if (score in 0f..100f) {
+                        addScoreData(tagId, score)
+                    } else {
+                        Toast.makeText(this, "0-100 사이의 점수를 입력하세요", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this, "올바른 숫자를 입력하세요", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        builder.setNegativeButton("취소") { dialog, _ -> dialog.dismiss() }
+        builder.show()
+    }
+    
+    /**
+     * 시간 입력 다이얼로그 표시 (분 단위)
+     */
+    private fun showTimeInputDialog(tagId: Long) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("모의고사 소요 시간 입력")
+        
+        val input = EditText(this)
+        input.hint = "소요 시간을 입력하세요 (분 단위)"
+        builder.setView(input)
+        
+        builder.setPositiveButton("추가") { _, _ ->
+            val timeText = input.text.toString()
+            if (timeText.isNotEmpty()) {
+                try {
+                    val time = timeText.toFloat()
+                    if (time >= 0f && time <= 300f) {
+                        addTimeData(tagId, time)
+                    } else {
+                        Toast.makeText(this, "0-300 사이의 분을 입력하세요", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this, "올바른 숫자를 입력하세요", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        builder.setNegativeButton("취소") { dialog, _ -> dialog.dismiss() }
+        builder.show()
+    }
+    
+    /**
+     * 성적 데이터 추가
+     */
+    private fun addScoreData(tagId: Long, score: Float) {
+        val result = dbHelper.addScoreData(tagId, score)
+        if (result != -1L) {
+            val currentIndex = scoreIndexMap[tagId] ?: 0f
+            val entries = scoreEntriesMap.getOrPut(tagId) { mutableListOf() }
+            entries.add(Entry(currentIndex, score))
+            scoreIndexMap[tagId] = currentIndex + 1f
+            
+            // 해당 태그의 차트 찾아서 업데이트
+            findAndUpdateScoreChart(tagId, entries)
+            
+            Toast.makeText(this, "성적이 추가되었습니다", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "데이터 저장 실패", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * 시간 데이터 추가
+     */
+    private fun addTimeData(tagId: Long, time: Float) {
+        val result = dbHelper.addTimeData(tagId, time)
+        if (result != -1L) {
+            val currentIndex = timeIndexMap[tagId] ?: 0f
+            val entries = timeEntriesMap.getOrPut(tagId) { mutableListOf() }
+            entries.add(Entry(currentIndex, time))
+            timeIndexMap[tagId] = currentIndex + 1f
+            
+            // 해당 태그의 차트 찾아서 업데이트
+            findAndUpdateTimeChart(tagId, entries)
+            
+            Toast.makeText(this, "소요 시간이 추가되었습니다", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "데이터 저장 실패", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * 특정 태그의 성적 차트를 찾아서 업데이트
+     */
+    private fun findAndUpdateScoreChart(tagId: Long, entries: List<Entry>) {
+        for (i in 0 until scrollContainer.childCount) {
+            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
+            if (tagContainer.tag == tagId) {
+                val additionalInfoContainer = tagContainer.getChildAt(1) as LinearLayout
+                val scoreGraphContainer = additionalInfoContainer.getChildAt(3) as LinearLayout
+                val scoreChart = scoreGraphContainer.getChildAt(1) as LineChart
+                updateScoreChart(scoreChart, entries)
+                break
+            }
+        }
+    }
+    
+    /**
+     * 특정 태그의 시간 차트를 찾아서 업데이트
+     */
+    private fun findAndUpdateTimeChart(tagId: Long, entries: List<Entry>) {
+        for (i in 0 until scrollContainer.childCount) {
+            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
+            if (tagContainer.tag == tagId) {
+                val additionalInfoContainer = tagContainer.getChildAt(1) as LinearLayout
+                val timeGraphContainer = additionalInfoContainer.getChildAt(4) as LinearLayout
+                val timeChart = timeGraphContainer.getChildAt(1) as LineChart
+                updateTimeChart(timeChart, entries)
+                break
+            }
+        }
+    }
+    
+    // OnChartValueSelectedListener 인터페이스 구현
+    override fun onValueSelected(e: Entry?, h: Highlight?) {
+        e?.let {
+            Toast.makeText(this, "선택된 값: ${it.y}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    override fun onNothingSelected() {
+        // 선택이 해제되었을 때의 동작
     }
 
     /**
@@ -375,8 +804,33 @@ class TagActivity : AppCompatActivity() {
         updateCompletionRates()   // 완수율 실시간 업데이트
         updateDdays()             // D-day 실시간 업데이트
         updateTaskLists()         // 태스크 목록 업데이트
-        updateSummaryInfo()       // 성적/시간 요약 업데이트
-        // updateGraphs() 제거 (그래프 기능 제거)
+        refreshAllCharts()        // 모든 차트 데이터 새로고침
+    }
+    
+    /**
+     * 모든 태그의 차트 데이터를 새로고침하는 함수
+     */
+    private fun refreshAllCharts() {
+        for (i in 0 until scrollContainer.childCount) {
+            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
+            val tagId = tagContainer.tag as Long
+            
+            try {
+                val additionalInfoContainer = tagContainer.getChildAt(1) as LinearLayout
+                
+                // 성적 차트 새로고침
+                val scoreGraphContainer = additionalInfoContainer.getChildAt(3) as LinearLayout
+                val scoreChart = scoreGraphContainer.getChildAt(1) as LineChart
+                loadScoreData(scoreChart, tagId)
+                
+                // 시간 차트 새로고침  
+                val timeGraphContainer = additionalInfoContainer.getChildAt(4) as LinearLayout
+                val timeChart = timeGraphContainer.getChildAt(1) as LineChart
+                loadTimeData(timeChart, tagId)
+            } catch (e: Exception) {
+                // 차트 새로고침 실패 시 무시 (토글이 접혀있을 수 있음)
+            }
+        }
     }
     // 기존 태그들을 데이터베이스에서 로드하는 메서드 추가
     private fun loadExistingTags() {
@@ -401,28 +855,15 @@ class TagActivity : AppCompatActivity() {
     }
 
     /**
-     * 화면에 표시된 모든 태그의 완수율을 실시간으로 업데이트하는 함수
+     * 화면에 표시된 모든 태그의 완수율을 실시간으로 업데이트하는 함수 (토글 UI 대응)
      * 
-     * 동작 과정:
-     * 1. scrollContainer 내의 모든 태그 뷰를 순회
-     * 2. 각 태그 컨테이너에서 태그 ID를 추출 (View.tag 속성에 저장됨)
-     * 3. 해당 태그 ID로 데이터베이스에서 완수율 계산
-     * 4. 완수율 TextView에 "완수율: XX%" 형태로 표시
-     * 
-     * 호출 시점:
-     * - onResume(): 다른 화면에서 돌아올 때
-     * - 태스크 상태가 변경된 후
-     * 
-     * UI 구조 참고:
+     * 새로운 UI 구조:
      * TagContainer (LinearLayout)
-     * ├── EditText (태그 이름) - index 0
-     * ├── TextView (D-day) - index 1
-     * ├── TextView (완수율) - index 2  ← 여기를 업데이트
-     * ├── TextView (태스크 목록 제목) - index 3
-     * ├── LinearLayout (태스크 목록 컨테이너) - index 4
-     * ├── TextView (그래프 제목) - index 5
-     * ├── TextView (그래프 요약) - index 6
-     * └── Button (수정하기) - index 7
+     * ├── BasicInfoContainer (LinearLayout) - index 0
+     * │   ├── NameToggleContainer (LinearLayout) - index 0
+     * │   ├── TextView (D-day) - index 1
+     * │   └── TextView (완수율) - index 2  ← 여기를 업데이트
+     * └── AdditionalInfoContainer (LinearLayout) - index 1
      */
     private fun updateCompletionRates() {
         // scrollContainer 내의 모든 태그 뷰를 순회하며 완수율 업데이트
@@ -430,8 +871,11 @@ class TagActivity : AppCompatActivity() {
             val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
             val tagId = tagContainer.tag as Long // 태그 ID는 View의 tag 속성에 저장됨
             
-            // 태그 컨테이너의 세 번째 자식이 완수율을 표시하는 TextView
-            val finishRateText = tagContainer.getChildAt(2) as TextView
+            // 기본 정보 컨테이너 (index 0)
+            val basicInfoContainer = tagContainer.getChildAt(0) as LinearLayout
+            
+            // 기본 정보 컨테이너의 세 번째 자식이 완수율을 표시하는 TextView (index 2)
+            val finishRateText = basicInfoContainer.getChildAt(2) as TextView
             
             // 데이터베이스에서 해당 태그의 완수율을 계산하여 가져옴
             val completionRate = dbHelper.getTagCompletionRate(tagId)
@@ -442,19 +886,15 @@ class TagActivity : AppCompatActivity() {
     }
 
     /**
-     * 화면에 표시된 모든 태그의 D-day를 실시간으로 업데이트하는 함수
+     * 화면에 표시된 모든 태그의 D-day를 실시간으로 업데이트하는 함수 (토글 UI 대응)
      * 
-     * 동작 과정:
-     * 1. scrollContainer 내의 모든 태그 뷰를 순회
-     * 2. 각 태그 컨테이너에서 태그 ID를 추출
-     * 3. 해당 태그 ID로 데이터베이스에서 시험 날짜 조회
-     * 4. D-day 계산 후 TextView에 표시
-     * 
-     * D-day 표시 형식:
-     * - 시험일 전: "D-5 (2024-01-15)"
-     * - 시험일 당일: "D-Day! (2024-01-10)"
-     * - 시험일 후: "D+3 (2024-01-07)"
-     * - 날짜 미설정: "D-day: 설정되지 않음"
+     * 새로운 UI 구조:
+     * TagContainer (LinearLayout)
+     * ├── BasicInfoContainer (LinearLayout) - index 0
+     * │   ├── NameToggleContainer (LinearLayout) - index 0
+     * │   ├── TextView (D-day) - index 1  ← 여기를 업데이트
+     * │   └── TextView (완수율) - index 2
+     * └── AdditionalInfoContainer (LinearLayout) - index 1
      */
     private fun updateDdays() {
         // scrollContainer 내의 모든 태그 뷰를 순회하며 D-day 업데이트
@@ -462,8 +902,11 @@ class TagActivity : AppCompatActivity() {
             val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
             val tagId = tagContainer.tag as Long // 태그 ID는 View의 tag 속성에 저장됨
             
-            // 태그 컨테이너의 두 번째 자식이 D-day를 표시하는 TextView
-            val ddayText = tagContainer.getChildAt(1) as TextView
+            // 기본 정보 컨테이너 (index 0)
+            val basicInfoContainer = tagContainer.getChildAt(0) as LinearLayout
+            
+            // 기본 정보 컨테이너의 두 번째 자식이 D-day를 표시하는 TextView (index 1)
+            val ddayText = basicInfoContainer.getChildAt(1) as TextView
             
             // 데이터베이스에서 해당 태그의 시험 날짜 조회
             val examDate = dbHelper.getExamDate(tagId)
@@ -502,64 +945,21 @@ class TagActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 화면에 표시된 모든 태그의 성적/시간 요약 정보를 업데이트하는 함수
-     * 
-     * 동작 과정:
-     * 1. scrollContainer 내의 모든 태그 뷰를 순회
-     * 2. 각 태그 ID로 데이터베이스에서 성적/시간 데이터 조회
-     * 3. 성적과 시간의 평균값을 계산하여 표시
-     * 
-     * 표시 정보:
-     * - 성적 평균: 모든 성적 데이터의 평균값
-     * - 시간 평균: 모든 시간 데이터의 평균값
-     * - 데이터가 없으면 "데이터 없음" 표시
-     */
-    private fun updateSummaryInfo() {
-        // scrollContainer 내의 모든 태그 뷰를 순회하며 요약 정보 업데이트
-        for (i in 0 until scrollContainer.childCount) {
-            val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
-            val tagId = tagContainer.tag as Long
-            
-            // 태그 컨테이너의 다섯 번째 자식이 요약 정보를 표시하는 TextView
-            val summaryText = tagContainer.getChildAt(5) as TextView
-            
-            // 데이터베이스에서 성적 데이터 조회 및 평균 계산
-            val scoreData = dbHelper.getScoreData(tagId)
-            val averageScore = if (scoreData.isNotEmpty()) {
-                val totalScore = scoreData.sumOf { it.second.toDouble() }
-                (totalScore / scoreData.size).toInt()
-            } else 0
-            
-            // 데이터베이스에서 시간 데이터 조회 및 평균 계산
-            val timeData = dbHelper.getTimeData(tagId)
-            val averageTime = if (timeData.isNotEmpty()) {
-                val totalTime = timeData.sumOf { it.second.toDouble() }
-                (totalTime / timeData.size).toInt()
-            } else 0
-            
-            // 요약 정보 텍스트 생성
-            val scoreText = if (averageScore > 0) "평균 ${averageScore}점" else "데이터 없음"
-            val timeText = if (averageTime > 0) "평균 ${averageTime}시간" else "데이터 없음"
-            
-            summaryText.text = "성적: $scoreText | 시간: $timeText"
-        }
-    }
+
 
     /**
-     * 화면에 표시된 모든 태그의 태스크 목록을 업데이트하는 함수
+     * 화면에 표시된 모든 태그의 태스크 목록을 업데이트하는 함수 (토글 UI 대응)
      * 
-     * 동작 과정:
-     * 1. scrollContainer 내의 모든 태그 뷰를 순회
-     * 2. 각 태그 ID로 데이터베이스에서 태스크 목록 조회
-     * 3. 태스크 목록 컨테이너에 체크박스와 함께 표시
-     * 4. 체크박스 클릭 시 데이터베이스 업데이트 및 모든 페이지에서 반영되도록 수정합니다.
-     * 
-     * UI 구조:
-     * - 각 태스크를 체크박스 + 텍스트로 표시
-     * - 계획 날짜와 완료 상태 포함
-     * - 최대 3개까지만 표시 (공간 절약)
-     * - 체크박스 클릭 시 실시간 데이터베이스 업데이트
+     * 새로운 UI 구조:
+     * TagContainer (LinearLayout)
+     * ├── BasicInfoContainer (LinearLayout) - index 0
+     * └── AdditionalInfoContainer (LinearLayout) - index 1
+     *     ├── TextView (태스크 목록 제목) - index 0
+     *     ├── LinearLayout (태스크 목록 컨테이너) - index 1  ← 여기를 업데이트
+     *     ├── LinearLayout (날짜 설정 컨테이너) - index 2
+     *     ├── LinearLayout (성적 그래프 컨테이너) - index 3
+     *     ├── LinearLayout (시간 그래프 컨테이너) - index 4
+     *     └── Button (수정하기 버튼) - index 5
      */
     private fun updateTaskLists() {
         val dpToPx = resources.displayMetrics.density
@@ -568,8 +968,11 @@ class TagActivity : AppCompatActivity() {
             val tagContainer = scrollContainer.getChildAt(i) as LinearLayout
             val tagId = tagContainer.tag as Long
             
-            // 태그 컨테이너의 다섯 번째 자식이 태스크 목록 컨테이너
-            val taskListContainer = tagContainer.getChildAt(4) as LinearLayout
+            // 추가 정보 컨테이너 (index 1)
+            val additionalInfoContainer = tagContainer.getChildAt(1) as LinearLayout
+            
+            // 태스크 목록 컨테이너 (index 1)
+            val taskListContainer = additionalInfoContainer.getChildAt(1) as LinearLayout
             taskListContainer.removeAllViews() // 기존 태스크 뷰들 제거
             
             // 데이터베이스에서 태스크 목록 조회
@@ -667,20 +1070,49 @@ class TagActivity : AppCompatActivity() {
     // updateGraphs() 함수 제거
 
     /**
-     * 그래프 데이터 입력 다이얼로그 (제거)
-     * 그래프 기능을 제거하여 안정성 확보
+     * 날짜 선택 다이얼로그를 표시하는 함수
+     * 
+     * @param tagId 태그 ID
+     * 
+     * 동작 과정:
+     * 1. DatePickerDialog를 생성하여 현재 날짜로 초기화
+     * 2. 사용자가 날짜를 선택하면 데이터베이스에 저장
+     * 3. UI의 D-day 정보를 즉시 업데이트
      */
-    // showGraphInputDialog() 함수 제거
-
-    /**
-     * 성적 입력 다이얼로그 (제거)
-     * 그래프 기능을 제거하여 안정성 확보
-     */
-    // showScoreInputDialog() 함수 제거
-
-    /**
-     * 시간 입력 다이얼로그 (제거)
-     * 그래프 기능을 제거하여 안정성 확보
-     */
-    // showTimeInputDialog() 함수 제거
+    private fun showDatePickerDialog(tagId: Long) {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        
+        val datePickerDialog = DatePickerDialog(
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                // 선택된 날짜를 문자열로 변환 (yyyy-MM-dd 형식)
+                val selectedDate = String.format(
+                    Locale.getDefault(),
+                    "%04d-%02d-%02d",
+                    selectedYear,
+                    selectedMonth + 1, // Calendar.MONTH는 0부터 시작
+                    selectedDay
+                )
+                
+                // 데이터베이스에 시험 날짜 저장
+                try {
+                    dbHelper.updateExamDate(tagId, selectedDate)
+                    Toast.makeText(this, "시험일이 설정되었습니다: $selectedDate", Toast.LENGTH_SHORT).show()
+                    
+                    // D-day 정보 즉시 업데이트
+                    updateDdays()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "날짜 설정 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            },
+            year,
+            month,
+            day
+        )
+        
+        datePickerDialog.show()
+    }
 }
